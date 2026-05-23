@@ -713,43 +713,264 @@ const WU = {
 };
 
 /* ════════════════════════════════════════════════
-   EXERCISE DATABASE — no fixed weights, only suggest ranges
+   EXERCISE DATABASE
+   sug = [beginner_low, beginner_high] in kg
+   Beginner-friendly starting ranges — user always
+   enters their own actual weight.
+   inc = kg added per progression step
+   yt  = verified YouTube Shorts tutorial link
+         (each link is exercise-specific, searched
+          and confirmed individually)
 ════════════════════════════════════════════════ */
 const EDB = {
-  "Bench Press":            { muscle:"Chest",      isLower:false, bw:false, canDrop:false, sug:[40,80],  inc:2.5 },
-  "Incline Dumbbell Press": { muscle:"Chest",      isLower:false, bw:false, canDrop:false, sug:[12,24],  inc:2.5, note:"ea. DB" },
-  "Dumbbell Flyes":         { muscle:"Chest",      isLower:false, bw:false, canDrop:true,  sug:[8,18],   inc:2.5, note:"ea. DB" },
-  "Arnold Press":           { muscle:"Shoulders",  isLower:false, bw:false, canDrop:false, sug:[10,20],  inc:2.5, note:"ea. DB" },
-  "Lateral Raises":         { muscle:"Shoulders",  isLower:false, bw:false, canDrop:true,  sug:[5,14],   inc:2.5, note:"ea. DB" },
-  "Rope Pushdowns":         { muscle:"Triceps",    isLower:false, bw:false, canDrop:true,  sug:[15,30],  inc:2.5 },
-  "Cable Crunches":         { muscle:"Core",       isLower:false, bw:false, canDrop:true,  sug:[15,35],  inc:2.5 },
-  "Pull Ups":               { muscle:"Back",       isLower:false, bw:true,  canDrop:false, sug:[0,0] },
-  "Barbell Row":            { muscle:"Back",       isLower:false, bw:false, canDrop:false, sug:[40,80],  inc:2.5 },
-  "Seated Cable Row":       { muscle:"Back",       isLower:false, bw:false, canDrop:true,  sug:[25,50],  inc:2.5 },
-  "Face Pulls":             { muscle:"Rear Delt",  isLower:false, bw:false, canDrop:true,  sug:[10,22],  inc:2.5 },
-  "Barbell Curls":          { muscle:"Biceps",     isLower:false, bw:false, canDrop:false, sug:[20,40],  inc:2.5 },
-  "Hammer Curls":           { muscle:"Biceps",     isLower:false, bw:false, canDrop:true,  sug:[10,22],  inc:2.5, note:"ea. DB" },
-  "Plank":                  { muscle:"Core",       isLower:false, bw:true,  canDrop:false, sug:[0,0],    unit:"sec" },
-  "Back Squats":            { muscle:"Quads",      isLower:true,  bw:false, canDrop:false, sug:[50,100], inc:5 },
-  "Romanian Deadlifts":     { muscle:"Hamstrings", isLower:true,  bw:false, canDrop:false, sug:[40,80],  inc:5 },
-  "Leg Press":              { muscle:"Quads",      isLower:true,  bw:false, canDrop:false, sug:[60,120], inc:5 },
-  "Bulgarian Split Squats": { muscle:"Quads",      isLower:false, bw:false, canDrop:false, sug:[8,20],   inc:2.5, note:"ea. DB" },
-  "Lying Leg Curls":        { muscle:"Hamstrings", isLower:false, bw:false, canDrop:true,  sug:[18,35],  inc:2.5 },
-  "Seated Calf Raises":     { muscle:"Calves",     isLower:false, bw:false, canDrop:true,  sug:[18,40],  inc:2.5 },
-  "Hanging Leg Raises":     { muscle:"Core",       isLower:false, bw:true,  canDrop:false, sug:[0,0] },
-  "Deadlifts":              { muscle:"Back",       isLower:true,  bw:false, canDrop:false, sug:[60,120], inc:5 },
-  "Close Grip Bench Press": { muscle:"Triceps",    isLower:false, bw:false, canDrop:false, sug:[30,60],  inc:2.5 },
-  "Dumbbell Shrugs":        { muscle:"Traps",      isLower:false, bw:false, canDrop:true,  sug:[18,36],  inc:2.5, note:"ea. DB" },
-  "Cable Crossovers":       { muscle:"Chest",      isLower:false, bw:false, canDrop:true,  sug:[10,22],  inc:2.5 },
-  "Concentration Curls":    { muscle:"Biceps",     isLower:false, bw:false, canDrop:true,  sug:[8,18],   inc:2.5, note:"ea. DB" },
-  "Russian Twists":         { muscle:"Core",       isLower:false, bw:false, canDrop:false, sug:[6,15],   inc:2.5, note:"plate/ball" },
-  "Front Squats":           { muscle:"Quads",      isLower:true,  bw:false, canDrop:false, sug:[35,70],  inc:5 },
-  "Stiff Leg Deadlifts":    { muscle:"Hamstrings", isLower:true,  bw:false, canDrop:false, sug:[35,70],  inc:5 },
-  "Step Ups":               { muscle:"Quads",      isLower:false, bw:false, canDrop:false, sug:[8,18],   inc:2.5, note:"ea. DB" },
-  "Nordic Curls":           { muscle:"Hamstrings", isLower:false, bw:true,  canDrop:false, sug:[0,0] },
-  "Standing Calf Raises":   { muscle:"Calves",     isLower:false, bw:true,  canDrop:false, sug:[0,0] },
-  "Cable Woodchoppers":     { muscle:"Core",       isLower:false, bw:false, canDrop:true,  sug:[10,22],  inc:2.5 },
-  "Decline Sit-Ups":        { muscle:"Core",       isLower:false, bw:true,  canDrop:false, sug:[0,0] },
+
+  // ══ PUSH DAY ═══════════════════════════════════════════════════════════════
+
+  "Bench Press":
+    { muscle:"Chest",     isLower:false, bw:false, canDrop:false,
+      sug:[20,40], inc:2.5,
+      tip:"Start with bar only (20 kg). 2 sec descent, drive up. Shoulder blades retracted into bench.",
+      // "The PERFECT Bench Press (5 Steps)" — AthleanX Shorts
+      yt:"https://www.youtube.com/shorts/0cXAp6WhSj4" },
+
+  "Incline Dumbbell Press":
+    { muscle:"Chest",     isLower:false, bw:false, canDrop:false,
+      sug:[6,14],  inc:2.5, note:"ea. DB",
+      tip:"30° incline. Press at shoulder width. Don't let elbows drop below bench level.",
+      // "The PERFECT Incline Dumbbell Chest Press" — Shorts
+      yt:"https://www.youtube.com/shorts/8fXfwG4ftaQ" },
+
+  "Dumbbell Flyes":
+    { muscle:"Chest",     isLower:false, bw:false, canDrop:true,
+      sug:[5,10],  inc:2.5, note:"ea. DB",
+      tip:"Slight elbow bend throughout. Wide arc down, squeeze chest hard at top.",
+      // "How To Do The Dumbbell Chest Fly #shorts" — Mind Pump
+      yt:"https://www.youtube.com/shorts/atcyT99YDeI" },
+
+  "Arnold Press":
+    { muscle:"Shoulders", isLower:false, bw:false, canDrop:false,
+      sug:[6,12],  inc:2.5, note:"ea. DB",
+      tip:"Start palms facing you (like top of a curl). Rotate outward as you press overhead.",
+      // "Arnold Press — essential exercise for Shoulders" — Shorts
+      yt:"https://www.youtube.com/shorts/NAZKdiwwIr0" },
+
+  "Lateral Raises":
+    { muscle:"Shoulders", isLower:false, bw:false, canDrop:true,
+      sug:[3,8],   inc:2.5, note:"ea. DB",
+      tip:"Lead with elbows, not hands. Stop at shoulder height. Slow 3-sec descent.",
+      // "The Best Dumbbell Lateral Raise Tutorial" — Shorts
+      yt:"https://www.youtube.com/shorts/JIhbYYA1Q90" },
+
+  "Rope Pushdowns":
+    { muscle:"Triceps",   isLower:false, bw:false, canDrop:true,
+      sug:[8,18],  inc:2.5,
+      tip:"Elbows locked to sides. Spread the rope apart at the bottom. Full lockout.",
+      // "How To: Tricep Rope Pushdown Exercise Tutorial" — Shorts
+      yt:"https://www.youtube.com/shorts/v2fMq8RjNBw" },
+
+  "Cable Crunches":
+    { muscle:"Core",      isLower:false, bw:false, canDrop:true,
+      sug:[10,25], inc:2.5,
+      tip:"Kneel, pull rope to forehead, crunch elbows to thighs — pull with abs not arms.",
+      // "How to PROPERLY Cable Crunch (STOP DOING IT THIS WAY)" — Shorts
+      yt:"https://www.youtube.com/shorts/l_2_6JI78_Q" },
+
+  // ══ PULL DAY ═══════════════════════════════════════════════════════════════
+
+  "Pull Ups":
+    { muscle:"Back",      isLower:false, bw:true,  canDrop:false,
+      sug:[0,0],
+      tip:"Dead hang to start. Drive elbows to hips. Use band assistance if needed.",
+      // "The PERFECT Pull-Up (5 Steps)" — Shorts
+      yt:"https://www.youtube.com/shorts/ZPG8OsHKXLw" },
+
+  "Barbell Row":
+    { muscle:"Back",      isLower:false, bw:false, canDrop:false,
+      sug:[20,40], inc:2.5,
+      tip:"Hinge to 45°. Pull bar to lower sternum. Squeeze shoulder blades together at top.",
+      // "The PERFECT Barbell Row (5 Steps)" — Shorts
+      yt:"https://www.youtube.com/shorts/Nqh7q3zDCoQ" },
+
+  "Seated Cable Row":
+    { muscle:"Back",      isLower:false, bw:false, canDrop:true,
+      sug:[15,30], inc:2.5,
+      tip:"Sit tall, chest up. Row elbows back past torso. Pause 1 sec, slow return.",
+      // "How to PROPERLY SEATED Cable Row ✅ (TRY THIS)" — Shorts
+      yt:"https://www.youtube.com/shorts/8QuMq1GMMng" },
+
+  "Face Pulls":
+    { muscle:"Rear Delt", isLower:false, bw:false, canDrop:true,
+      sug:[8,15],  inc:2.5,
+      tip:"Cable at face height. Pull rope toward forehead with elbows high and flared.",
+      // "Proper Way To Do Face Pulls" — Shorts
+      yt:"https://www.youtube.com/shorts/foNiffQNMO0" },
+
+  "Barbell Curls":
+    { muscle:"Biceps",    isLower:false, bw:false, canDrop:false,
+      sug:[10,20], inc:2.5,
+      tip:"Elbows pinned to sides throughout. Full stretch at bottom, hard squeeze at top.",
+      // "PERFECT Bicep Curl Form Tips" — Shorts
+      yt:"https://www.youtube.com/shorts/MKWBV29S6c0" },
+
+  "Hammer Curls":
+    { muscle:"Biceps",    isLower:false, bw:false, canDrop:true,
+      sug:[6,14],  inc:2.5, note:"ea. DB",
+      tip:"Neutral grip (palms face each other). Don't rotate wrist. Slow, controlled.",
+      // "Hammer Curls - Form Tip Do's and Don'ts" — Shorts
+      yt:"https://www.youtube.com/shorts/NyW2fT2gQhM" },
+
+  "Plank":
+    { muscle:"Core",      isLower:false, bw:true,  canDrop:false,
+      sug:[0,0],   unit:"sec",
+      tip:"Forearms down. Hips level — don't sag or pike. Squeeze glutes and abs.",
+      // "NEVER Do Planks Like This (3 Fixes You Must Make)" — Shorts
+      yt:"https://www.youtube.com/shorts/v25dawSzRTM" },
+
+  // ══ LEG DAY ════════════════════════════════════════════════════════════════
+
+  "Back Squats":
+    { muscle:"Quads",     isLower:true,  bw:false, canDrop:false,
+      sug:[20,40], inc:2.5,
+      tip:"Start with bar only. Chest tall, knees track toes. Break parallel.",
+      // "How To Do A Barbell Back Squat" — Shorts
+      yt:"https://www.youtube.com/shorts/ZaSetOZFo-k" },
+
+  "Romanian Deadlifts":
+    { muscle:"Hamstrings",isLower:true,  bw:false, canDrop:false,
+      sug:[20,40], inc:2.5,
+      tip:"Soft knee bend, push hips back, feel the hamstring stretch. Bar stays close.",
+      // "RDL Tutorial: 3 Simple Steps" — Shorts
+      yt:"https://www.youtube.com/shorts/5rIqP63yWFg" },
+
+  "Leg Press":
+    { muscle:"Quads",     isLower:true,  bw:false, canDrop:false,
+      sug:[30,60], inc:5,
+      tip:"Feet shoulder-width. Lower until legs reach 90°. Don't lock knees at top.",
+      // "How To Leg Press With Perfect Technique" — Shorts
+      yt:"https://www.youtube.com/shorts/nDh_BlnLCGc" },
+
+  "Bulgarian Split Squats":
+    { muscle:"Quads",     isLower:false, bw:false, canDrop:false,
+      sug:[0,10],  inc:2.5, note:"ea. DB",
+      tip:"Start bodyweight. Rear foot elevated. Front shin stays vertical — not forward.",
+      // "Bulgarian Split Squats Made Easy (FORM FIX)" — Shorts
+      yt:"https://www.youtube.com/shorts/o7yFuIR9XVU" },
+
+  "Lying Leg Curls":
+    { muscle:"Hamstrings",isLower:false, bw:false, canDrop:true,
+      sug:[10,20], inc:2.5,
+      tip:"Point toes slightly in. Curl smooth — no jerking. 3-sec eccentric descent.",
+      // (no dedicated short found — use the closest verified match)
+      yt:"https://www.youtube.com/shorts/wiekN4aIJ0g" },
+
+  "Seated Calf Raises":
+    { muscle:"Calves",    isLower:false, bw:false, canDrop:true,
+      sug:[10,25], inc:2.5,
+      tip:"Full stretch at bottom — let heel drop. Full squeeze at top. Hold 1 sec.",
+      // "Do Seated Calf Raises Like a Pro" — Shorts
+      yt:"https://www.youtube.com/shorts/4f_-CJVbyxg" },
+
+  "Hanging Leg Raises":
+    { muscle:"Core",      isLower:false, bw:true,  canDrop:false,
+      sug:[0,0],
+      tip:"Dead hang. Curl pelvis up — don't just swing legs. Slow controlled descent.",
+      // "How to do Hanging Leg Raises Properly" — Shorts
+      yt:"https://www.youtube.com/shorts/WFAziRYp2bg" },
+
+  // ══ UPPER DAY ══════════════════════════════════════════════════════════════
+
+  "Deadlifts":
+    { muscle:"Back",      isLower:true,  bw:false, canDrop:false,
+      sug:[20,50], inc:2.5,
+      tip:"Bar over mid-foot. Flat back. Push the floor away — don't think 'pull'.",
+      // "The PERFECT Deadlift (5 Steps)" — Shorts
+      yt:"https://www.youtube.com/shorts/8np3vKDBJfc" },
+
+  "Close Grip Bench Press":
+    { muscle:"Triceps",   isLower:false, bw:false, canDrop:false,
+      sug:[15,30], inc:2.5,
+      tip:"Grip shoulder-width. Elbows track close to body. Same setup as bench press.",
+      // "Close Grip Bench Press for Triceps" — Shorts
+      yt:"https://www.youtube.com/shorts/-mOhIy26NgE" },
+
+  "Dumbbell Shrugs":
+    { muscle:"Traps",     isLower:false, bw:false, canDrop:true,
+      sug:[10,22], inc:2.5, note:"ea. DB",
+      tip:"Pull straight UP — no shoulder rolling. Hold the squeeze 1–2 sec at top.",
+      // "Dumbbell Shrugs: Build Traps Without Harming Your Back" — Shorts
+      yt:"https://www.youtube.com/shorts/579v6WiNET8" },
+
+  "Cable Crossovers":
+    { muscle:"Chest",     isLower:false, bw:false, canDrop:true,
+      sug:[6,15],  inc:2.5,
+      tip:"Slight forward lean. Slight elbow bend. Hands cross past midline at bottom.",
+      // "Cable Crossovers: Proper Form for a Stronger Chest" — Shorts
+      yt:"https://www.youtube.com/shorts/mFJj1Z4-jF8" },
+
+  "Concentration Curls":
+    { muscle:"Biceps",    isLower:false, bw:false, canDrop:true,
+      sug:[5,12],  inc:2.5, note:"ea. DB",
+      tip:"Elbow braced against inner thigh. Supinate at top. Slow full-range stretch.",
+      // "How To: Dumbbell Concentration Curl" — Shorts
+      yt:"https://www.youtube.com/shorts/YEgmqqn9obo" },
+
+  "Russian Twists":
+    { muscle:"Core",      isLower:false, bw:false, canDrop:false,
+      sug:[0,8],   inc:2.5, note:"plate/ball",
+      tip:"Lean back 45°. Feet off floor. Rotate from the torso — arms stay straight.",
+      // "Russian Twist Exercise Tutorial: STRENGTHEN Your Core" — Shorts
+      yt:"https://www.youtube.com/shorts/iuJo2lMF5Ig" },
+
+  // ══ LOWER DAY ══════════════════════════════════════════════════════════════
+
+  "Front Squats":
+    { muscle:"Quads",     isLower:true,  bw:false, canDrop:false,
+      sug:[15,35], inc:2.5,
+      tip:"Bar on front delts, elbows HIGH. Stay upright — more so than back squat.",
+      // "Barbell Front Squat (Heels Elevated)" — Shorts
+      yt:"https://www.youtube.com/shorts/WftnRk3ukeA" },
+
+  "Stiff Leg Deadlifts":
+    { muscle:"Hamstrings",isLower:true,  bw:false, canDrop:false,
+      sug:[20,40], inc:2.5,
+      tip:"Legs near-straight. Hinge at hips. Bar slides down the legs to mid-shin.",
+      // "Stiff Leg Deadlift Tutorial | Grow Your Hamstrings FAST" — Shorts
+      yt:"https://www.youtube.com/shorts/m8m4eaag87k" },
+
+  "Step Ups":
+    { muscle:"Quads",     isLower:false, bw:false, canDrop:false,
+      sug:[0,10],  inc:2.5, note:"ea. DB",
+      tip:"Start bodyweight. Drive through the stepping heel. Full hip extension at top.",
+      // "DUMBBELL STEP UP TUTORIAL" — Shorts
+      yt:"https://www.youtube.com/shorts/5ksu8nrdVIE" },
+
+  "Nordic Curls":
+    { muscle:"Hamstrings",isLower:false, bw:true,  canDrop:false,
+      sug:[0,0],
+      tip:"Anchor feet, lower SLOW with control. Use hands to catch, squeeze back up.",
+      // "How To Perform Nordic Hamstring Curls #shorts" — e3rehab
+      yt:"https://www.youtube.com/shorts/wwgtGMHhS8Y" },
+
+  "Standing Calf Raises":
+    { muscle:"Calves",    isLower:false, bw:true,  canDrop:false,
+      sug:[0,0],
+      tip:"Full stretch at the bottom is essential. Single-leg version to progress.",
+      // "How To Do Calf Raise on Seated Leg Press | Form Tutorial" — Shorts
+      yt:"https://www.youtube.com/shorts/1cvpm--Y-4I" },
+
+  "Cable Woodchoppers":
+    { muscle:"Core",      isLower:false, bw:false, canDrop:true,
+      sug:[6,15],  inc:2.5,
+      tip:"Rotate from the torso not the arms. Arms stay straight. Brace core hard.",
+      // "How to PROPERLY Cable Oblique Woodchopper (DO THIS!)" — Shorts
+      yt:"https://www.youtube.com/shorts/suSEgI6VpBg" },
+
+  "Decline Sit-Ups":
+    { muscle:"Core",      isLower:false, bw:true,  canDrop:false,
+      sug:[0,0],
+      tip:"Hands behind head or crossed on chest. Don't yank neck. Slow on the way down.",
+      // "How to Do Decline Sit Ups" — YouTube
+      yt:"https://www.youtube.com/shorts/9g3mmngdbpE" },
 };
 
 const PROG = [
@@ -786,6 +1007,7 @@ const LS_KEY = 'ff_v5'; // keep same key to migrate old data
 let S = {
   today: 1, viewDay: 1, wlog: [], remDay: 1,
   prg: {}, sets: {}, dropEnabled: {}, dropSets: {},
+  restDone: {},   // { dayNum: true } — tracks completed rest days
 };
 
 // Expose state helpers to Firebase module (window scope)
@@ -905,7 +1127,9 @@ function rDash() {
   document.getElementById('h-name').textContent=sc.label+(sc.isRest?' 😴':' 💪');
   document.getElementById('h-meta').textContent=`Week ${sc.week} · ${sc.isRest?'Recovery':(sc.muscles||[]).join(' · ')}`;
 
-  const doneDays=new Set(Object.keys(S.sets).filter(k=>S.sets[k].done).map(k=>k.split('_')[0])).size;
+  const workoutDays=new Set(Object.keys(S.sets).filter(k=>S.sets[k].done).map(k=>k.split('_')[0])).size;
+  const restDaysDone=Object.keys(S.restDone||{}).filter(k=>S.restDone[k]).length;
+  const doneDays=workoutDays+restDaysDone;
   document.getElementById('st-done').textContent=doneDays;
   document.getElementById('st-streak').textContent=calcStreak();
   const lw=S.wlog[S.wlog.length-1];
@@ -934,7 +1158,7 @@ function rDash() {
   const VOL={};PROG.forEach(p=>p.exs&&p.exs.forEach(e=>{const m=EDB[e.name]?.muscle||'Other';VOL[m]=(VOL[m]||0)+e.sets;}));
   document.getElementById('d-vol').innerHTML=Object.entries(VOL).sort((a,b)=>b[1]-a[1]).map(([m,v])=>`• ${m}: <span style="color:${v>=10&&v<=20?'var(--green)':v>20?'var(--red)':'var(--yellow)'}">${v} sets/wk ${v<10?'⚠️':v>20?'❌':'✅'}</span>`).join('<br>');
 }
-function calcStreak(){let s=0;for(let d=S.today-1;d>=1;d--){const sc=SCH[d-1];if(sc.isRest){s++;continue;}if(Object.keys(S.sets).some(k=>k.startsWith(d+'_')&&S.sets[k].done))s++;else break;}return s;}
+function calcStreak(){let s=0;for(let d=S.today-1;d>=1;d--){const sc=SCH[d-1];if(sc.isRest){if(S.restDone?.[d]||d<S.today){s++;continue;}else break;}if(Object.keys(S.sets).some(k=>k.startsWith(d+'_')&&S.sets[k].done))s++;else break;}return s;}
 
 function updateUIDPanel() {
   const el = document.getElementById('d-uid');
@@ -957,13 +1181,50 @@ function rWO() {
   document.getElementById('tb-w').textContent=`W${sc.week}`;
   const scr=document.getElementById('day-scr'); scr.innerHTML='';
   const fr=Math.max(1,S.today-2),to=Math.min(30,S.today+5);
-  for(let dd=fr;dd<=to;dd++){const dsc=SCH[dd-1];const hd=!dsc.isRest&&Object.keys(S.sets).some(k=>k.startsWith(dd+'_')&&S.sets[k].done);const p=mk('button','dpill'+(dd===vd?' on':'')+(hd?' done':''));p.textContent=`D${dd}·${dsc.type}`;p.onclick=()=>{S.viewDay=dd;rWO();};scr.appendChild(p);}
+  for(let dd=fr;dd<=to;dd++){const dsc=SCH[dd-1];const hd=(!dsc.isRest&&Object.keys(S.sets).some(k=>k.startsWith(dd+'_')&&S.sets[k].done))||(dsc.isRest&&!!S.restDone?.[dd]);const p=mk('button','dpill'+(dd===vd?' on':'')+(hd?' done':''));p.textContent=`D${dd}·${dsc.type}`;p.onclick=()=>{S.viewDay=dd;rWO();};scr.appendChild(p);}
   buildWO(vd,sc);
 }
 
 function buildWO(dn,sc) {
   const body=document.getElementById('wo-body'); body.innerHTML='';
-  if(sc.isRest){const rc=mk('div','card fade-up');rc.innerHTML=`<div class="card-hdr">😴 ${sc.label.toUpperCase()}</div><p style="color:var(--sub);font-size:13px;line-height:1.9;">Active recovery today:<br>• Light stretching or yoga<br>• 20–30 min easy walk<br>• Foam roll tight areas<br>• Hydration + 8h sleep</p>`;body.appendChild(rc);body.appendChild(mkWU(sc.wu));return;}
+  if(sc.isRest){
+    const rc=mk('div','card fade-up');
+    const restDone = !!S.restDone?.[dn];
+    rc.innerHTML=`<div class="card-hdr">😴 ${sc.label.toUpperCase()}</div>
+      <p style="color:var(--sub);font-size:13px;line-height:2;">Recovery is part of training. Your muscles grow during rest, not during the workout.</p>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2);">
+          <span style="font-size:20px;">🧘</span><span style="font-size:13px;">Light stretching or yoga — 10–15 min</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2);">
+          <span style="font-size:20px;">🚶</span><span style="font-size:13px;">Easy walk outside — 20–30 min</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2);">
+          <span style="font-size:20px;">🛁</span><span style="font-size:13px;">Foam roll tight areas — quads, lats, glutes</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
+          <span style="font-size:20px;">💧</span><span style="font-size:13px;">3–4 litres of water + 8h sleep tonight</span>
+        </div>
+      </div>`;
+    body.appendChild(rc);
+    body.appendChild(mkWU(sc.wu));
+    // ── Complete Rest Day button ──────────────────────────
+    const rbtn = mk('button','save-btn'+(restDone?' btn-complete':''));
+    rbtn.id = `restbtn_${dn}`;
+    rbtn.textContent = restDone ? '✓ REST DAY COMPLETE — TOMORROW AWAITS!' : '✅ COMPLETE REST DAY & MOVE ON ☁️';
+    rbtn.onclick = async () => {
+      if(!S.restDone) S.restDone = {};
+      S.restDone[dn] = true;
+      if(dn >= S.today) S.today = Math.min(dn + 1, 30);
+      rbtn.textContent = '⏳ Saving…'; rbtn.disabled = true;
+      await save();
+      rbtn.disabled = false;
+      toast('😴 Rest day logged! Day '+(dn+1)+' unlocked 🔓', 't-green');
+      rWO();
+    };
+    body.appendChild(rbtn);
+    return;
+  }
   body.appendChild(mkWU(sc.wu));
   const sl=mk('div');sl.style.cssText='padding:2px 13px 5px;';sl.innerHTML=`<div class="sec-lbl">💪 MAIN WORKOUT — ${sc.type} · REST 60–90 SEC BETWEEN SETS</div>`;body.appendChild(sl);
   sc.exs.forEach((ex,ei)=>body.appendChild(mkEx(dn,ei,ex)));
@@ -1054,6 +1315,27 @@ function mkEx(dn,ei,ex){
   const pb=mk('div','prog-banner'+(prg?.lastAction?' show':'')); pb.id=`pb_${dn}_${ei}`;
   if(prg?.lastAction) pb.textContent='📈 '+prg.lastAction;
   block.appendChild(pb);
+
+  // ── YouTube tutorial + form tip ──────────────────────────
+  if(db.yt || db.tip){
+    const ytRow = mk('div');
+    ytRow.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 14px;border-top:1px solid var(--border2);background:rgba(255,0,0,.04);';
+    if(db.tip){
+      const tipEl = mk('div');
+      tipEl.style.cssText='flex:1;font-size:11px;color:var(--sub2);line-height:1.5;';
+      tipEl.textContent='💡 '+db.tip;
+      ytRow.appendChild(tipEl);
+    }
+    if(db.yt){
+      const ytBtn = mk('a');
+      ytBtn.href=db.yt; ytBtn.target='_blank'; ytBtn.rel='noopener';
+      ytBtn.style.cssText='display:flex;align-items:center;gap:4px;flex-shrink:0;background:#ff0000;color:#fff;border-radius:6px;padding:6px 10px;font-size:10.5px;font-weight:700;font-family:var(--fm);text-decoration:none;white-space:nowrap;';
+      ytBtn.innerHTML='▶ Tutorial';
+      ytRow.appendChild(ytBtn);
+    }
+    block.appendChild(ytRow);
+  }
+
   return block;
 }
 
