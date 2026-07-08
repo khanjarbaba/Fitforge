@@ -355,10 +355,12 @@ a { text-decoration: none; }
   border: 1px solid #3d3710; border-radius: var(--r); padding: 13px; margin: 0 13px 9px;
 }
 .wu-lbl { font-family: var(--fm); font-size: 9.5px; letter-spacing: 2px; color: #8a7830; text-transform: uppercase; margin-bottom: 6px; }
-.wu-card a { color: var(--orange); font-weight: 700; font-size: 14px; display: flex; align-items: flex-start; gap: 5px; line-height: 1.35; }
-.wu-desc { font-size: 11.5px; color: #9a8c5a; margin-top: 5px; font-style: italic; }
-.wu-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
-.wu-chip { font-family: var(--fm); font-size: 9.5px; background: rgba(255,154,60,.09); color: var(--orange); border-radius: var(--r3); padding: 2px 7px; border: 1px solid rgba(255,154,60,.18); }
+.wu-title { color: var(--orange); font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+.wu-moves { display: flex; flex-direction: column; }
+.wu-move { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,154,60,.12); }
+.wu-move:last-child { border-bottom: none; }
+.wu-move-name { font-size: 12.5px; color: #d8cd9a; }
+.wu-move-detail { font-family: var(--fm); font-size: 10.5px; color: #9a8c5a; white-space: nowrap; }
 
 /* Exercise block */
 .ex-block {
@@ -932,15 +934,47 @@ a { text-decoration: none; }
 'use strict';
 
 /* ════════════════════════════════════════════════
-   VERIFIED DAREBEE WARM-UPS
+   WARM-UPS — self-contained, no external links to rot.
+   Optional yt (per-move YouTube link) can be added later
+   the same way exercise tutorials are — only ever a real,
+   individually-verified link, never a guess.
 ════════════════════════════════════════════════ */
 const WU = {
-  push:  { name:"Upper Body Warm-Up",   url:"https://darebee.com/workouts/upper-body-warm-up-workout.html", desc:"Push-ups, arm circles & shoulder mobility — fires chest, anterior delts and triceps", chips:["10 min","Chest activation","Shoulder mobility","Tricep prime"] },
-  pull:  { name:"Active Warm-Up",        url:"https://darebee.com/workouts/active-warm-up-workout.html",     desc:"Scapular activation & mobility flows — primes lats, rear delts and biceps",         chips:["10 min","Scapular activation","Rear-delt prime","Bicep warm"] },
-  legs:  { name:"Lower Body Warm-Up",    url:"https://darebee.com/workouts/lower-body-warm-up-workout.html", desc:"Leg swings, bodyweight squats & hip circles — opens hips and fires glutes",         chips:["10 min","Hip mobility","Glute activation","Knee prep"] },
-  upper: { name:"Full Body Warm-Up",     url:"https://darebee.com/workouts/full-body-warm-up-workout.html",  desc:"Dynamic full-body activation — covers all major upper muscle groups",                chips:["10 min","Full upper","CNS activation","Dynamic flow"] },
-  lower: { name:"Mobility Warm-Up",      url:"https://darebee.com/workouts/mobility-warm-up-workout.html",   desc:"Deep hip openers, ankle circles & hamstring sweeps — essential before heavy squats",chips:["10 min","Hamstring prep","Ankle mobility","Hip flexors"] },
-  rest:  { name:"Recovery Workout",      url:"https://darebee.com/workouts/recovery-workout.html",           desc:"Gentle mobility and soft-tissue work to flush soreness and restore range of motion", chips:["15 min","Recovery","Soft tissue","Mobility"] }
+  push: { label:"Upper Body Warm-Up", duration:"8 min", moves:[
+    { name:"Arm Circles",             detail:"20 sec fwd + 20 sec back" },
+    { name:"Push-Up to Downward Dog", detail:"8 reps, slow & controlled" },
+    { name:"Band Pull-Aparts",        detail:"2 × 15 (or wall slides, no band)" },
+    { name:"Arm Swings Across Chest", detail:"2 × 10" },
+    { name:"Incline Push-Ups",        detail:"1 × 15, easy pace" },
+  ]},
+  pull: { label:"Back & Pull Warm-Up", duration:"8 min", moves:[
+    { name:"Cat-Cow Stretch",         detail:"10 reps, slow" },
+    { name:"Band Pull-Aparts",        detail:"2 × 15" },
+    { name:"Scapular Shrugs",         detail:"2 × 10 (dead hang or bar)" },
+    { name:"Arm Swings Across Chest", detail:"20 reps" },
+    { name:"Light Face Pulls/Rows",   detail:"1 × 15, easy weight" },
+  ]},
+  legs: { label:"Lower Body Warm-Up", duration:"8 min", moves:[
+    { name:"Bodyweight Squats",       detail:"15 reps" },
+    { name:"Leg Swings (fwd/back)",   detail:"10 per leg" },
+    { name:"Leg Swings (side/side)",  detail:"10 per leg" },
+    { name:"Walking Lunges",          detail:"10 per leg" },
+    { name:"Glute Bridges",           detail:"15 reps" },
+  ]},
+  upper: { label:"Full Body Warm-Up", duration:"8 min", moves:[
+    { name:"Jumping Jacks",           detail:"30 sec" },
+    { name:"Arm Circles",             detail:"20 sec each direction" },
+    { name:"Push-Up to Downward Dog", detail:"8 reps" },
+    { name:"Torso Twists",            detail:"20 reps" },
+    { name:"Bodyweight Squats",       detail:"10 reps" },
+  ]},
+  lower: { label:"Mobility Warm-Up", duration:"8 min", moves:[
+    { name:"Hip Circles",             detail:"10 each direction, each side" },
+    { name:"Ankle Circles",           detail:"10 each direction, each foot" },
+    { name:"Walking Knee Hugs",       detail:"10 per leg" },
+    { name:"World's Greatest Stretch",detail:"5 per side (lunge + reach + rotate)" },
+    { name:"Slow Deep Squats",        detail:"10 reps, pause at bottom" },
+  ]},
 };
 
 /* ════════════════════════════════════════════════
@@ -1211,12 +1245,12 @@ const PROG = [
     exs:[{name:"Pull Ups",sets:4,rng:[5,10]},{name:"Barbell Row",sets:4,rng:[8,12]},{name:"Seated Cable Row",sets:3,rng:[10,14]},{name:"Face Pulls",sets:3,rng:[12,15]},{name:"Barbell Curls",sets:3,rng:[8,12]},{name:"Hammer Curls",sets:3,rng:[10,14]},{name:"Plank",sets:3,rng:[45,60]}] },
   { key:"legs",  type:"LEGS",  label:"Leg Day",     wu:WU.legs,  muscles:["Quads","Hamstrings","Calves","Core"],
     exs:[{name:"Back Squats",sets:4,rng:[6,10]},{name:"Romanian Deadlifts",sets:3,rng:[8,12]},{name:"Leg Press",sets:3,rng:[10,14]},{name:"Bulgarian Split Squats",sets:3,rng:[8,12]},{name:"Lying Leg Curls",sets:3,rng:[10,14]},{name:"Seated Calf Raises",sets:4,rng:[12,15]},{name:"Hanging Leg Raises",sets:3,rng:[12,15]}] },
-  { key:"rest",  type:"REST",  label:"Active Rest", wu:WU.rest,  muscles:[], exs:[], isRest:true },
+  { key:"rest",  type:"REST",  label:"Active Rest", muscles:[], exs:[], isRest:true },
   { key:"upper", type:"UPPER", label:"Upper Day",   wu:WU.upper, muscles:["Back","Chest","Triceps","Biceps","Traps","Core"],
     exs:[{name:"Deadlifts",sets:4,rng:[4,8]},{name:"Close Grip Bench Press",sets:3,rng:[8,12]},{name:"Dumbbell Shrugs",sets:3,rng:[10,15]},{name:"Cable Crossovers",sets:3,rng:[10,14]},{name:"Concentration Curls",sets:3,rng:[10,14]},{name:"Russian Twists",sets:3,rng:[16,20]}] },
   { key:"lower", type:"LOWER", label:"Lower Day",   wu:WU.lower, muscles:["Quads","Hamstrings","Calves","Core"],
     exs:[{name:"Front Squats",sets:4,rng:[6,10]},{name:"Stiff Leg Deadlifts",sets:3,rng:[8,12]},{name:"Step Ups",sets:3,rng:[10,12]},{name:"Nordic Curls",sets:3,rng:[5,10]},{name:"Standing Calf Raises",sets:4,rng:[15,20]},{name:"Cable Woodchoppers",sets:3,rng:[12,15]},{name:"Decline Sit-Ups",sets:3,rng:[12,15]}] },
-  { key:"rest2", type:"REST",  label:"Full Rest",   wu:WU.rest,  muscles:[], exs:[], isRest:true },
+  { key:"rest2", type:"REST",  label:"Full Rest",   muscles:[], exs:[], isRest:true },
 ];
 
 const CARDIO = [
@@ -1709,7 +1743,6 @@ function buildWO(dn,sc) {
         </div>
       </div>`;
     body.appendChild(rc);
-    body.appendChild(mkWU(sc.wu));
     const rbtn = mk('button','save-btn'+(!!S.restDone?.[dn]?' btn-complete':''));
     rbtn.id = `restbtn_${dn}`;
     rbtn.textContent = S.restDone?.[dn] ? '✓ REST DAY COMPLETE — TOMORROW AWAITS!' : '✅ COMPLETE REST DAY & MOVE ON ☁️';
@@ -1826,7 +1859,9 @@ function buildWO(dn,sc) {
 
 function mkWU(wu){
   const d=mk('div','wu-card fade-up');
-  d.innerHTML=`<div class="wu-lbl">🔥 WARM-UP</div><a href="${wu.url}" target="_blank" rel="noopener"><span>${wu.name}</span>&nbsp;↗</a><p class="wu-desc">${wu.desc}</p><div class="wu-chips">${wu.chips.map(c=>`<span class="wu-chip">${c}</span>`).join('')}</div>`;
+  d.innerHTML=`<div class="wu-lbl">🔥 WARM-UP · ${wu.duration}</div>
+    <div class="wu-title">${wu.label}</div>
+    <div class="wu-moves">${wu.moves.map(m=>`<div class="wu-move"><span class="wu-move-name">${m.name}</span><span class="wu-move-detail">${m.detail}</span></div>`).join('')}</div>`;
   return d;
 }
 
