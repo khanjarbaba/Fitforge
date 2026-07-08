@@ -1313,6 +1313,14 @@ function getLastSession(exName) {
 }
 function calc1RM(wt, reps) { return (!wt || !reps || reps < 1) ? null : Math.round(wt * (1 + reps/30)); }
 
+// Snap a computed weight to the nearest plate/dumbbell increment that's
+// actually loadable at a gym (e.g. 2.5kg steps: 12.5, 15, 17.5…), and clean
+// up any floating-point noise from averaging. Falls back to 2 decimals.
+function snapWeight(wt, inc) {
+  if (!inc) return Math.round(wt * 100) / 100;
+  return Math.round(wt / inc) * inc;
+}
+
 function recommendWeight(exName, rng) {
   const db = EDB[exName]; if (!db || db.bw) return null;
   const last = getLastSession(exName);
@@ -1320,13 +1328,13 @@ function recommendWeight(exName, rng) {
   const wts  = last.map(s => s.wt).filter(Boolean);
   const reps = last.map(s => s.reps).filter(Boolean);
   if (!wts.length || !reps.length) return null;
-  const avgWt = wts.reduce((a,b)=>a+b,0)/wts.length;
+  const avgWt = snapWeight(wts.reduce((a,b)=>a+b,0)/wts.length, db.inc);
   const avgRp = reps.reduce((a,b)=>a+b,0)/reps.length;
   const est1RM = calc1RM(avgWt, avgRp);
   if (reps.every(r => r >= rng[1])) {
-    return { type:'increase', suggest: Math.round((avgWt + db.inc)*10)/10, last: avgWt, note:`All sets ≥${rng[1]} reps → +${db.inc}kg`, est1RM };
+    return { type:'increase', suggest: snapWeight(avgWt + db.inc, db.inc), last: avgWt, note:`All sets ≥${rng[1]} reps → +${db.inc}kg`, est1RM };
   } else if (reps.some(r => r < rng[0])) {
-    return { type:'decrease', suggest: Math.max(db.sug[0], Math.round((avgWt - db.inc)*10)/10), last: avgWt, note:`Below ${rng[0]} reps → −${db.inc}kg deload`, est1RM };
+    return { type:'decrease', suggest: Math.max(db.sug[0], snapWeight(avgWt - db.inc, db.inc)), last: avgWt, note:`Below ${rng[0]} reps → −${db.inc}kg deload`, est1RM };
   }
   return { type:'maintain', suggest: avgWt, last: avgWt, note:`Within range → maintain weight, add reps`, est1RM };
 }
@@ -1339,13 +1347,13 @@ async function evalAndSave(exName, dn, ei, numSets, rng) {
   const p = S.prg[exName];
   const avgRp = reps.reduce((a,b)=>a+b,0)/reps.length;
   const wts   = reps.map((_,i) => S.sets[`${dn}_${ei}_${i}`]?.wt).filter(Boolean);
-  const avgWt = wts.length ? wts.reduce((a,b)=>a+b,0)/wts.length : (p.weight||0);
+  const avgWt = snapWeight(wts.length ? wts.reduce((a,b)=>a+b,0)/wts.length : (p.weight||0), db.inc);
   p.est1RM = calc1RM(avgWt, avgRp);
   if (reps.every(r => r >= rng[1])) {
-    p.weight = Math.round((avgWt + db.inc)*10)/10;
+    p.weight = snapWeight(avgWt + db.inc, db.inc);
     p.lastAction = `▲ Weight → ${p.weight}kg next session`;
   } else if (reps.some(r => r < rng[0])) {
-    p.weight = Math.max(db.sug[0], Math.round((avgWt - db.inc)*10)/10);
+    p.weight = Math.max(db.sug[0], snapWeight(avgWt - db.inc, db.inc));
     p.lastAction = `▼ Deload → ${p.weight}kg next session`;
   } else {
     p.weight = avgWt;
