@@ -1252,7 +1252,23 @@ let S = {
     hpLeft:    0,     // remaining sets
   },
   sessionXP: 0,       // XP earned in the current session (reset on save)
+  streakCount:   0,   // consecutive real-world calendar days trained/rested
+  lastStreakDate: null, // 'YYYY-MM-DD' (local) of the last day the streak was credited
 };
+
+// Local calendar date as 'YYYY-MM-DD' — used for the real-time streak, not S.today (program day)
+function ymd(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function todayYMD() { return ymd(new Date()); }
+function yesterdayYMD() { const d = new Date(); d.setDate(d.getDate() - 1); return ymd(d); }
+
+// Call once per real completion (workout fully done, or rest day completed).
+// Increments the streak only the first time it's called on a given calendar day.
+function bumpStreak() {
+  const today = todayYMD();
+  if (S.lastStreakDate === today) return; // already credited today
+  S.streakCount = (S.lastStreakDate === yesterdayYMD()) ? (S.streakCount || 0) + 1 : 1;
+  S.lastStreakDate = today;
+}
 
 // Expose state helpers to Firebase module (window scope)
 window._getStateForSave = () => JSON.parse(JSON.stringify(S));
@@ -1630,7 +1646,13 @@ function rDash() {
   // Update XP UI
   updateXPUI();
 }
-function calcStreak(){let s=0;for(let d=S.today-1;d>=1;d--){const sc=SCH[d-1];if(sc.isRest){if(S.restDone?.[d]||d<S.today){s++;continue;}else break;}if(Object.keys(S.sets).some(k=>k.startsWith(d+'_')&&S.sets[k].done))s++;else break;}return s;}
+// Real-time streak: counts consecutive calendar days credited via bumpStreak().
+// Breaks (reads as 0) once a day is missed, regardless of in-app day progress.
+function calcStreak(){
+  if(!S.lastStreakDate) return 0;
+  if(S.lastStreakDate===todayYMD()||S.lastStreakDate===yesterdayYMD()) return S.streakCount||0;
+  return 0;
+}
 
 function updateUIDPanel() {
   const el = document.getElementById('d-uid');
@@ -1687,6 +1709,7 @@ function buildWO(dn,sc) {
       if(!S.restDone) S.restDone = {};
       S.restDone[dn] = true;
       if(dn >= S.today) S.today = Math.min(dn + 1, 30);
+      bumpStreak();
       // Award rest day XP
       awardXP(100);
       S.sessionXP = 0;
@@ -1779,9 +1802,10 @@ function buildWO(dn,sc) {
     S.sessionXP = 0;
 
     if(dn>=S.today) S.today=Math.min(dn+1,30);
+    const nd=Object.keys(S.sets).filter(k=>k.startsWith(dn+'_')&&S.sets[k].done).length;
+    if(nd>=ts) bumpStreak(); // only credit the real-world streak once the day's workout is fully done
     await save();
     sbtn.disabled=false;
-    const nd=Object.keys(S.sets).filter(k=>k.startsWith(dn+'_')&&S.sets[k].done).length;
     if (nd >= ts) {
       toast(`🔥 Day crushed! +${sessXP.toLocaleString()} XP this session!`, 't-green');
     } else {
