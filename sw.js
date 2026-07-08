@@ -1,5 +1,5 @@
 // FitForge Service Worker — Offline Cache
-const CACHE = 'fitforge-v2';
+const CACHE = 'fitforge-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -23,8 +23,26 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
+// The app shell (HTML) is network-first so deploys show up on next load;
+// everything else (fonts, manifest) stays cache-first for offline speed.
+const isAppShell = req => req.mode === 'navigate' || req.destination === 'document' || req.url.endsWith('/index.html');
+
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+
+  if (isAppShell(e.request)) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => caches.match(e.request).then(cached => cached || new Response('Offline', { status: 503 })))
+    );
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
