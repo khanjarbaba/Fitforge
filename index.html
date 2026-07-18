@@ -374,6 +374,8 @@ a { text-decoration: none; }
 .ex-title  { font-size: 14px; font-weight: 700; }
 .ex-muscle { font-family: var(--fm); font-size: 10px; color: var(--purple); margin-top: 2px; }
 .ex-ico    { font-size: 18px; flex-shrink: 0; margin-left: 8px; margin-top: 1px; }
+.ex-target { font-size: 11px; color: var(--sub2); line-height: 1.5; padding: 8px 14px; border-bottom: 1px solid var(--border2); }
+.ex-target b { color: var(--purple); font-weight: 700; }
 
 /* Suggestion bar */
 .ex-suggest {
@@ -994,6 +996,7 @@ const EDB = {
   "Bench Press":
     { muscle:"Chest",     isLower:false, bw:false, canDrop:false,
       sug:[20,40], inc:2.5,
+      target:"<b>Mid-chest</b> (pec major) does the pressing; front delts and triceps assist at lockout. Feel a stretch across your chest at the bottom — if it's burning in your shoulders instead, you're flaring your elbows too wide.",
       tip:"Start with bar only (20 kg). 2 sec descent, drive up. Shoulder blades retracted into bench.",
       // "The PERFECT Bench Press (5 Steps)" — AthleanX Shorts
       yt:"https://www.youtube.com/shorts/0cXAp6WhSj4" },
@@ -1001,6 +1004,7 @@ const EDB = {
   "Incline Dumbbell Press":
     { muscle:"Chest",     isLower:false, bw:false, canDrop:false,
       sug:[6,14],  inc:2.5, note:"ea. DB",
+      target:"<b>Upper chest</b> (clavicular pec) and front delts. Feel the stretch high on your chest at the bottom and squeeze at the top — it shouldn't feel like a shoulder press.",
       tip:"30° incline. Press at shoulder width. Don't let elbows drop below bench level.",
       // "The PERFECT Incline Dumbbell Chest Press" — Shorts
       yt:"https://www.youtube.com/shorts/8fXfwG4ftaQ" },
@@ -1008,6 +1012,7 @@ const EDB = {
   "Dumbbell Flyes":
     { muscle:"Chest",     isLower:false, bw:false, canDrop:true,
       sug:[5,10],  inc:2.5, note:"ea. DB",
+      target:"<b>Chest</b>, isolated via a stretch-and-squeeze arc with minimal triceps help. Feel a deep chest stretch at the bottom and a hugging squeeze at the top.",
       tip:"Slight elbow bend throughout. Wide arc down, squeeze chest hard at top.",
       // "How To Do The Dumbbell Chest Fly #shorts" — Mind Pump
       yt:"https://www.youtube.com/shorts/atcyT99YDeI" },
@@ -1015,6 +1020,7 @@ const EDB = {
   "Arnold Press":
     { muscle:"Shoulders", isLower:false, bw:false, canDrop:false,
       sug:[6,12],  inc:2.5, note:"ea. DB",
+      target:"<b>Front & side deltoids</b>, with the rotation adding mid-delt emphasis. Feel it in the shoulder cap, not the traps — keep shrugging out of it.",
       tip:"Start palms facing you (like top of a curl). Rotate outward as you press overhead.",
       // "Arnold Press — essential exercise for Shoulders" — Shorts
       yt:"https://www.youtube.com/shorts/NAZKdiwwIr0" },
@@ -1022,6 +1028,7 @@ const EDB = {
   "Lateral Raises":
     { muscle:"Shoulders", isLower:false, bw:false, canDrop:true,
       sug:[3,8],   inc:2.5, note:"ea. DB",
+      target:"<b>Side (medial) deltoid</b>, isolated. Feel it purely in the meat of your shoulder — if your traps are burning instead, you're swinging with momentum or going too heavy.",
       tip:"Lead with elbows, not hands. Stop at shoulder height. Slow 3-sec descent.",
       // "The Best Dumbbell Lateral Raise Tutorial" — Shorts
       yt:"https://www.youtube.com/shorts/JIhbYYA1Q90" },
@@ -1029,6 +1036,7 @@ const EDB = {
   "Rope Pushdowns":
     { muscle:"Triceps",   isLower:false, bw:false, canDrop:true,
       sug:[8,18],  inc:2.5,
+      target:"<b>Triceps</b> (all three heads, lateral head emphasized by the rope spread). Feel it in the back of your upper arm — elbows should stay pinned, not drift forward.",
       tip:"Elbows locked to sides. Spread the rope apart at the bottom. Full lockout.",
       // "How To: Tricep Rope Pushdown Exercise Tutorial" — Shorts
       yt:"https://www.youtube.com/shorts/v2fMq8RjNBw" },
@@ -1036,6 +1044,7 @@ const EDB = {
   "Cable Crunches":
     { muscle:"Core",      isLower:false, bw:false, canDrop:true,
       sug:[10,25], inc:2.5,
+      target:"<b>Rectus abdominis</b> (front abs). Feel your abs crunch and round your spine — if your hip flexors or lower back are doing the work instead, you're pulling with arms/hips, not curling the spine.",
       tip:"Kneel, pull rope to forehead, crunch elbows to thighs — pull with abs not arms.",
       // "How to PROPERLY Cable Crunch (STOP DOING IT THIS WAY)" — Shorts
       yt:"https://www.youtube.com/shorts/l_2_6JI78_Q" },
@@ -1045,6 +1054,7 @@ const EDB = {
   "Pull Ups":
     { muscle:"Back",      isLower:false, bw:true,  canDrop:false,
       sug:[0,0],
+      target:"<b>Lats</b> (width) with biceps and rear delts assisting. Feel your lats stretch at the bottom and drive your elbows down and back — not just your arms curling you up.",
       tip:"Dead hang to start. Drive elbows to hips. Use band assistance if needed.",
       // "The PERFECT Pull-Up (5 Steps)" — Shorts
       yt:"https://www.youtube.com/shorts/ZPG8OsHKXLw" },
@@ -1052,6 +1062,7 @@ const EDB = {
   "Barbell Row":
     { muscle:"Back",      isLower:false, bw:false, canDrop:false,
       sug:[20,40], inc:2.5,
+      target:"<b>Lats & mid-back</b> (rhomboids/traps) with biceps assisting. Feel the squeeze between your shoulder blades at the top — if it's all lower back and arms, you're rounding your back or yanking with momentum.",
       tip:"Hinge to 45°. Pull bar to lower sternum. Squeeze shoulder blades together at top.",
       // "The PERFECT Barbell Row (5 Steps)" — Shorts
       yt:"https://www.youtube.com/shorts/Nqh7q3zDCoQ" },
@@ -1059,6 +1070,7 @@ const EDB = {
   "Seated Cable Row":
     { muscle:"Back",      isLower:false, bw:false, canDrop:true,
       sug:[15,30], inc:2.5,
+      target:"<b>Mid-back and lats</b>, similar to the barbell row but more controlled. Feel your shoulder blades pull together at the end range — don't let your torso rock to move the weight.",
       tip:"Sit tall, chest up. Row elbows back past torso. Pause 1 sec, slow return.",
       // "How to PROPERLY SEATED Cable Row ✅ (TRY THIS)" — Shorts
       yt:"https://www.youtube.com/shorts/8QuMq1GMMng" },
@@ -1066,6 +1078,7 @@ const EDB = {
   "Face Pulls":
     { muscle:"Rear Delt", isLower:false, bw:false, canDrop:true,
       sug:[8,15],  inc:2.5,
+      target:"<b>Rear delts & upper back</b> (external rotators). Feel it behind your shoulders as your elbows flare high and wide — this is the fix for hunched, internally-rotated shoulders.",
       tip:"Cable at face height. Pull rope toward forehead with elbows high and flared.",
       // "Proper Way To Do Face Pulls" — Shorts
       yt:"https://www.youtube.com/shorts/foNiffQNMO0" },
@@ -1073,6 +1086,7 @@ const EDB = {
   "Barbell Curls":
     { muscle:"Biceps",    isLower:false, bw:false, canDrop:false,
       sug:[10,20], inc:2.5,
+      target:"<b>Biceps brachii</b>. Feel the full length of your bicep stretch at the bottom and squeeze at the top — swinging the bar means momentum, not your biceps, is doing the work.",
       tip:"Elbows pinned to sides throughout. Full stretch at bottom, hard squeeze at top.",
       // "PERFECT Bicep Curl Form Tips" — Shorts
       yt:"https://www.youtube.com/shorts/MKWBV29S6c0" },
@@ -1080,6 +1094,7 @@ const EDB = {
   "Hammer Curls":
     { muscle:"Biceps",    isLower:false, bw:false, canDrop:true,
       sug:[6,14],  inc:2.5, note:"ea. DB",
+      target:"<b>Biceps + brachialis</b> (the muscle under the bicep that adds arm thickness) and forearms. Feel it more on the outer/thumb side of your upper arm than a regular curl.",
       tip:"Neutral grip (palms face each other). Don't rotate wrist. Slow, controlled.",
       // "Hammer Curls - Form Tip Do's and Don'ts" — Shorts
       yt:"https://www.youtube.com/shorts/NyW2fT2gQhM" },
@@ -1087,6 +1102,7 @@ const EDB = {
   "Plank":
     { muscle:"Core",      isLower:false, bw:true,  canDrop:false,
       sug:[0,0],   unit:"sec",
+      target:"<b>Rectus & deep core</b> (transverse abdominis), plus glutes keeping your hips level. Feel your whole midsection braced tight — if your lower back aches, your hips are sagging.",
       tip:"Forearms down. Hips level — don't sag or pike. Squeeze glutes and abs.",
       // "NEVER Do Planks Like This (3 Fixes You Must Make)" — Shorts
       yt:"https://www.youtube.com/shorts/v25dawSzRTM" },
@@ -1096,6 +1112,7 @@ const EDB = {
   "Back Squats":
     { muscle:"Quads",     isLower:true,  bw:false, canDrop:false,
       sug:[20,40], inc:2.5,
+      target:"<b>Quads</b> primarily, with glutes and hamstrings assisting out of the hole. Feel your thighs doing the work on the way up — knees caving in means your glutes aren't stabilizing enough.",
       tip:"Start with bar only. Chest tall, knees track toes. Break parallel.",
       // "How To Do A Barbell Back Squat" — Shorts
       yt:"https://www.youtube.com/shorts/ZaSetOZFo-k" },
@@ -1103,6 +1120,7 @@ const EDB = {
   "Romanian Deadlifts":
     { muscle:"Hamstrings",isLower:true,  bw:false, canDrop:false,
       sug:[20,40], inc:2.5,
+      target:"<b>Hamstrings & glutes</b> via a hip hinge, minimal quad involvement. Feel a deep stretch down the back of your legs as your hips push back — your knees barely bend.",
       tip:"Soft knee bend, push hips back, feel the hamstring stretch. Bar stays close.",
       // "RDL Tutorial: 3 Simple Steps" — Shorts
       yt:"https://www.youtube.com/shorts/5rIqP63yWFg" },
@@ -1110,6 +1128,7 @@ const EDB = {
   "Leg Press":
     { muscle:"Quads",     isLower:true,  bw:false, canDrop:false,
       sug:[30,60], inc:5,
+      target:"<b>Quads</b>, with glutes/hamstrings contributing more as you widen your stance or lower the seat. Feel it in the front of your thighs — knee pain usually means the seat's too close or you're going too deep.",
       tip:"Feet shoulder-width. Lower until legs reach 90°. Don't lock knees at top.",
       // "How To Leg Press With Perfect Technique" — Shorts
       yt:"https://www.youtube.com/shorts/nDh_BlnLCGc" },
@@ -1117,6 +1136,7 @@ const EDB = {
   "Bulgarian Split Squats":
     { muscle:"Quads",     isLower:false, bw:false, canDrop:false,
       sug:[0,10],  inc:2.5, note:"ea. DB",
+      target:"<b>Quads & glutes</b> of the front leg do almost all the work; the back leg is just for balance. Feel it burning in the front leg — if your back leg feels loaded, you're pushing off it too much.",
       tip:"Start bodyweight. Rear foot elevated. Front shin stays vertical — not forward.",
       // "Bulgarian Split Squats Made Easy (FORM FIX)" — Shorts
       yt:"https://www.youtube.com/shorts/o7yFuIR9XVU" },
@@ -1124,6 +1144,7 @@ const EDB = {
   "Lying Leg Curls":
     { muscle:"Hamstrings",isLower:false, bw:false, canDrop:true,
       sug:[10,20], inc:2.5,
+      target:"<b>Hamstrings</b>, isolated. Feel the back of your thigh curling your heel toward your glutes — if your lower back or hips arch up off the pad, drop the weight.",
       tip:"Point toes slightly in. Curl smooth — no jerking. 3-sec eccentric descent.",
       // "LYING LEG CURL MACHINE TUTORIAL" — verified match (previous link was a Romanian Deadlift video)
       yt:"https://www.youtube.com/shorts/d6sg829PgNs" },
@@ -1131,6 +1152,7 @@ const EDB = {
   "Seated Calf Raises":
     { muscle:"Calves",    isLower:false, bw:false, canDrop:true,
       sug:[10,25], inc:2.5,
+      target:"<b>Soleus</b> (the deep calf muscle, most active with a bent knee). Feel a deep stretch at the bottom and a hard squeeze at the top of your lower calf.",
       tip:"Full stretch at bottom — let heel drop. Full squeeze at top. Hold 1 sec.",
       // "Do Seated Calf Raises Like a Pro" — Shorts
       yt:"https://www.youtube.com/shorts/4f_-CJVbyxg" },
@@ -1138,6 +1160,7 @@ const EDB = {
   "Hanging Leg Raises":
     { muscle:"Core",      isLower:false, bw:true,  canDrop:false,
       sug:[0,0],
+      target:"<b>Lower abs & hip flexors</b>. Feel your abs curling your pelvis up toward your ribs — if you're just swinging your legs from the hips, that's momentum, not abs.",
       tip:"Dead hang. Curl pelvis up — don't just swing legs. Slow controlled descent.",
       // "How to do Hanging Leg Raises Properly" — Shorts
       yt:"https://www.youtube.com/shorts/WFAziRYp2bg" },
@@ -1147,6 +1170,7 @@ const EDB = {
   "Deadlifts":
     { muscle:"Back",      isLower:true,  bw:false, canDrop:false,
       sug:[20,50], inc:2.5,
+      target:"<b>Whole posterior chain</b> — hamstrings, glutes, spinal erectors, lats as stabilizers. Feel your legs and glutes driving the floor away with a flat back — if your lower back is what's straining, your hips are rising before your chest.",
       tip:"Bar over mid-foot. Flat back. Push the floor away — don't think 'pull'.",
       // "The PERFECT Deadlift (5 Steps)" — Shorts
       yt:"https://www.youtube.com/shorts/8np3vKDBJfc" },
@@ -1154,6 +1178,7 @@ const EDB = {
   "Close Grip Bench Press":
     { muscle:"Triceps",   isLower:false, bw:false, canDrop:false,
       sug:[15,30], inc:2.5,
+      target:"<b>Triceps</b> as the prime mover; chest and front delts assist less than a normal bench press. Feel it in the back of your upper arm at lockout, elbows tucked close to your ribs.",
       tip:"Grip shoulder-width. Elbows track close to body. Same setup as bench press.",
       // "Close Grip Bench Press for Triceps" — Shorts
       yt:"https://www.youtube.com/shorts/-mOhIy26NgE" },
@@ -1161,6 +1186,7 @@ const EDB = {
   "Dumbbell Shrugs":
     { muscle:"Traps",     isLower:false, bw:false, canDrop:true,
       sug:[10,22], inc:2.5, note:"ea. DB",
+      target:"<b>Upper trapezius</b>. Feel a straight-up squeeze at the top of your neck/shoulders — rolling your shoulders forward or back turns it into joint stress, not a trap contraction.",
       tip:"Pull straight UP — no shoulder rolling. Hold the squeeze 1–2 sec at top.",
       // "Dumbbell Shrugs: Build Traps Without Harming Your Back" — Shorts
       yt:"https://www.youtube.com/shorts/579v6WiNET8" },
@@ -1168,6 +1194,7 @@ const EDB = {
   "Cable Crossovers":
     { muscle:"Chest",     isLower:false, bw:false, canDrop:true,
       sug:[6,15],  inc:2.5,
+      target:"<b>Inner/lower chest</b>, isolating the squeeze at the midline. Feel your chest pulling your hands together and slightly down and across — not your front delts pushing forward.",
       tip:"Slight forward lean. Slight elbow bend. Hands cross past midline at bottom.",
       // "Cable Crossovers: Proper Form for a Stronger Chest" — Shorts
       yt:"https://www.youtube.com/shorts/mFJj1Z4-jF8" },
@@ -1175,6 +1202,7 @@ const EDB = {
   "Concentration Curls":
     { muscle:"Biceps",    isLower:false, bw:false, canDrop:true,
       sug:[5,12],  inc:2.5, note:"ea. DB",
+      target:"<b>Biceps</b>, strict isolation with no swing possible. Feel a hard peak squeeze at the top and full stretch at the bottom — your elbow stays pinned against your thigh the whole set.",
       tip:"Elbow braced against inner thigh. Supinate at top. Slow full-range stretch.",
       // "How To: Dumbbell Concentration Curl" — Shorts
       yt:"https://www.youtube.com/shorts/YEgmqqn9obo" },
@@ -1182,6 +1210,7 @@ const EDB = {
   "Russian Twists":
     { muscle:"Core",      isLower:false, bw:false, canDrop:false,
       sug:[0,8],   inc:2.5, note:"plate/ball",
+      target:"<b>Obliques</b> (side abs), with rectus abdominis assisting. Feel the rotation coming from your torso — if your arms do all the moving and your core isn't fatiguing, slow down and rotate from the ribs.",
       tip:"Lean back 45°. Feet off floor. Rotate from the torso — arms stay straight.",
       // "Russian Twist Exercise Tutorial: STRENGTHEN Your Core" — Shorts
       yt:"https://www.youtube.com/shorts/iuJo2lMF5Ig" },
@@ -1191,6 +1220,7 @@ const EDB = {
   "Front Squats":
     { muscle:"Quads",     isLower:true,  bw:false, canDrop:false,
       sug:[15,35], inc:2.5,
+      target:"<b>Quads</b>, even more than a back squat — the upright torso demands a lot from your upper back/core to hold the bar. Feel your quads burning hardest, and your upper back working to stay tall.",
       tip:"Bar on front delts, elbows HIGH. Stay upright — more so than back squat.",
       // "Barbell Front Squat (Heels Elevated)" — Shorts
       yt:"https://www.youtube.com/shorts/WftnRk3ukeA" },
@@ -1198,6 +1228,7 @@ const EDB = {
   "Stiff Leg Deadlifts":
     { muscle:"Hamstrings",isLower:true,  bw:false, canDrop:false,
       sug:[20,40], inc:2.5,
+      target:"<b>Hamstrings</b>, very similar to an RDL but with straighter legs for a deeper stretch. Feel the stretch down your hamstrings as the bar slides down your shins — stop once your lower back wants to round.",
       tip:"Legs near-straight. Hinge at hips. Bar slides down the legs to mid-shin.",
       // "Stiff Leg Deadlift Tutorial | Grow Your Hamstrings FAST" — Shorts
       yt:"https://www.youtube.com/shorts/m8m4eaag87k" },
@@ -1205,6 +1236,7 @@ const EDB = {
   "Step Ups":
     { muscle:"Quads",     isLower:false, bw:false, canDrop:false,
       sug:[0,10],  inc:2.5, note:"ea. DB",
+      target:"<b>Quads & glutes</b> of the stepping leg. Feel your front leg driving you up — if you're pushing off your back foot, you're cheating the working leg out of the stimulus.",
       tip:"Start bodyweight. Drive through the stepping heel. Full hip extension at top.",
       // "DUMBBELL STEP UP TUTORIAL" — Shorts
       yt:"https://www.youtube.com/shorts/5ksu8nrdVIE" },
@@ -1212,6 +1244,7 @@ const EDB = {
   "Nordic Curls":
     { muscle:"Hamstrings",isLower:false, bw:true,  canDrop:false,
       sug:[0,0],
+      target:"<b>Hamstrings</b>, eccentric-focused (lengthening under load). Feel your hamstrings fighting to slow your fall forward — your hips should stay in line with your knees, not piked.",
       tip:"Anchor feet, lower SLOW with control. Use hands to catch, squeeze back up.",
       // "How To Perform Nordic Hamstring Curls #shorts" — e3rehab
       yt:"https://www.youtube.com/shorts/wwgtGMHhS8Y" },
@@ -1219,6 +1252,7 @@ const EDB = {
   "Standing Calf Raises":
     { muscle:"Calves",    isLower:false, bw:true,  canDrop:false,
       sug:[0,0],
+      target:"<b>Gastrocnemius</b> (the visible, bigger calf muscle, most active with a straight knee). Feel a full stretch at the bottom and a hard squeeze up onto your toes.",
       tip:"Full stretch at the bottom is essential. Single-leg version to progress.",
       // "Standing Bodyweight Calf Raise" — verified match (previous link was a seated leg-press calf raise)
       yt:"https://www.youtube.com/shorts/3DFqV3rgngY" },
@@ -1226,6 +1260,7 @@ const EDB = {
   "Cable Woodchoppers":
     { muscle:"Core",      isLower:false, bw:false, canDrop:true,
       sug:[6,15],  inc:2.5,
+      target:"<b>Obliques</b>, working to rotate and resist rotation of your torso. Feel the twist coming from your core, not your arms pulling the cable across.",
       tip:"Rotate from the torso not the arms. Arms stay straight. Brace core hard.",
       // "How to PROPERLY Cable Oblique Woodchopper (DO THIS!)" — Shorts
       yt:"https://www.youtube.com/shorts/suSEgI6VpBg" },
@@ -1233,6 +1268,7 @@ const EDB = {
   "Decline Sit-Ups":
     { muscle:"Core",      isLower:false, bw:true,  canDrop:false,
       sug:[0,0],
+      target:"<b>Rectus abdominis</b> (upper & lower fibers), with hip flexors assisting due to the decline angle. Feel your abs curling your ribs toward your hips — if it's all in your hip flexors/lower back, don't anchor your feet so aggressively.",
       tip:"Hands behind head or crossed on chest. Don't yank neck. Slow on the way down.",
       // "How to Decline Sit up | Exercise Tutorial" — verified match (previous link was a Hanging Leg Lift video)
       yt:"https://www.youtube.com/shorts/M04i4qZgtPU" },
@@ -1879,6 +1915,13 @@ function mkEx(dn,ei,ex,bossDay=false){
   const hdr=mk('div','ex-hdr');
   hdr.innerHTML=`<div style="flex:1;min-width:0;"><div class="ex-title">${ex.name}</div><div class="ex-muscle">${db.muscle}${db.note?' · '+db.note:''}</div></div><div class="ex-ico" id="ico_${dn}_${ei}">${dc===ex.sets?'✅':dc>0?'🔄':'⬜'}</div>`;
   block.appendChild(hdr);
+
+  // What you should feel working — helps catch bad form without needing the video
+  if(db.target){
+    const tgt=mk('div','ex-target');
+    tgt.innerHTML=`🎯 ${db.target}`;
+    block.appendChild(tgt);
+  }
 
   // Suggestion bar
   const sbar=mk('div','ex-suggest');
