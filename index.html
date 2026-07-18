@@ -294,6 +294,7 @@ a { text-decoration: none; }
 
 .pb-wrap { background: var(--bg3); border-radius: 3px; height: 5px; overflow: hidden; margin-top: 7px; }
 .pb-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--accent)); border-radius: 3px; transition: width .5s ease; }
+.status-badge { display: inline-block; font-family: var(--fm); font-size: 10px; font-weight: 700; letter-spacing: .5px; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
 
 /* ══════════════════════════════════════════════════
    SYNC BANNER
@@ -845,6 +846,10 @@ a { text-decoration: none; }
       <div class="card-hdr">CLOUD ACCOUNT</div>
       <div id="d-uid" style="font-family:var(--fm);font-size:10px;color:var(--sub);line-height:1.8;"></div>
     </div>
+    <div class="card">
+      <div class="card-hdr">📍 GYM CHECK-IN</div>
+      <div id="gym-body"></div>
+    </div>
   </div>
 
   <!-- ════ SCREEN: WORKOUT ════ -->
@@ -906,6 +911,14 @@ a { text-decoration: none; }
     </div>
   </div>
 
+  <!-- ════ SCREEN: STAKE ════ -->
+  <div class="screen" id="s-stake">
+    <div style="padding:15px 13px 5px;">
+      <div class="card-hdr" style="font-size:20px;letter-spacing:2px;">STAKE VAULT</div>
+    </div>
+    <div id="stake-body"></div>
+  </div>
+
   <!-- ════ BOTTOM NAV ════ -->
   <nav id="nav">
     <button class="nb on" id="nb-d"  onclick="sw('dash',this)">
@@ -923,6 +936,10 @@ a { text-decoration: none; }
     <button class="nb" id="nb-wt" onclick="sw('wt',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       Weight
+    </button>
+    <button class="nb" id="nb-stake" onclick="sw('stake',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Stake
     </button>
   </nav>
 </div>
@@ -1324,6 +1341,8 @@ let S = {
   sessionXP: 0,       // XP earned in the current session (reset on save)
   streakCount:   0,   // consecutive real-world calendar days trained/rested
   lastStreakDate: null, // 'YYYY-MM-DD' (local) of the last day the streak was credited
+  gym: null,          // { lat, lng, radius } — saved gym location for check-in verification
+  stake: null,        // { amount, goal, vpa, name, status, startedAt, sawProgress }
 };
 
 // Local calendar date as 'YYYY-MM-DD' — used for the real-time streak, not S.today (program day)
@@ -1652,12 +1671,13 @@ function sw(id, btn) {
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
   document.getElementById('s-'+id).classList.add('active');
   if (btn) btn.classList.add('on');
-  const subs = { dash:'ADAPTIVE COACH', wo:'EXECUTE · FORGE · ADAPT', hist:'HISTORY & RECORDS', wt:'BODYWEIGHT LOG' };
+  const subs = { dash:'ADAPTIVE COACH', wo:'EXECUTE · FORGE · ADAPT', hist:'HISTORY & RECORDS', wt:'BODYWEIGHT LOG', stake:'STAKE VAULT' };
   document.getElementById('tb-sub').textContent = subs[id] || 'FITFORGE';
   if (id==='dash') rDash();
   if (id==='wo')   rWO();
   if (id==='hist') { histTab('log'); }
   if (id==='wt')   rWT();
+  if (id==='stake') rStake();
 }
 function goWO() { S.viewDay = S.today; sw('wo', document.getElementById('nb-wo')); }
 
@@ -1723,6 +1743,8 @@ function rDash() {
 
   // Update XP UI
   updateXPUI();
+
+  rGymCheckin(sc);
 }
 // Real-time streak: counts consecutive calendar days credited via bumpStreak().
 // Breaks (reads as 0) once a day is missed, regardless of in-app day progress.
@@ -1730,6 +1752,223 @@ function calcStreak(){
   if(!S.lastStreakDate) return 0;
   if(S.lastStreakDate===todayYMD()||S.lastStreakDate===yesterdayYMD()) return S.streakCount||0;
   return 0;
+}
+
+/* ════════════════════════════════════════════════
+   GYM CHECK-IN — location-gated streak credit
+   Training days only require this; rest days keep
+   their existing self-reported completion.
+════════════════════════════════════════════════ */
+function distanceMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function getLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error('Geolocation is not supported by this browser.'));
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(pos.coords),
+      err => reject(new Error(err.message || 'Could not get your location.')),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  });
+}
+
+async function setGymLocation() {
+  const btn = document.getElementById('btn-set-gym');
+  if (btn) { btn.disabled = true; btn.textContent = 'Getting location…'; }
+  try {
+    const coords = await getLocation();
+    S.gym = { lat: coords.latitude, lng: coords.longitude, radius: 120 };
+    await save();
+    toast(`📍 Gym location saved (accuracy ±${Math.round(coords.accuracy)}m)`, 't-green');
+  } catch (err) {
+    toast('⚠️ ' + err.message, 't-red');
+  } finally {
+    rDash();
+  }
+}
+
+function changeGymLocation() {
+  if (!confirm('Re-set your gym location? Do this while standing at the gym.')) return;
+  S.gym = null;
+  save();
+  rDash();
+}
+
+async function gymCheckIn() {
+  const btn = document.getElementById('btn-gym-checkin');
+  if (!S.gym) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking location…'; }
+  try {
+    const coords = await getLocation();
+    const dist = distanceMeters(coords.latitude, coords.longitude, S.gym.lat, S.gym.lng);
+    const radius = S.gym.radius || 120;
+    if (dist <= radius) {
+      bumpStreak();
+      await save();
+      toast(`✅ Checked in ${Math.round(dist)}m from your gym — streak day credited!`, 't-green');
+    } else {
+      toast(`❌ You're ${Math.round(dist)}m from your gym (limit ${radius}m) — no credit given.`, 't-red');
+    }
+  } catch (err) {
+    toast('⚠️ ' + err.message, 't-red');
+  } finally {
+    rDash();
+  }
+}
+
+function rGymCheckin(sc) {
+  const el = document.getElementById('gym-body');
+  if (!el) return;
+
+  if (sc.isRest) {
+    el.innerHTML = `<p style="color:var(--sub);font-size:12.5px;line-height:1.6;">😴 Rest day — no gym check-in needed. Complete your rest day from the Workout tab to keep your streak alive.</p>`;
+    return;
+  }
+
+  if (!S.gym) {
+    el.innerHTML = `
+      <p style="color:var(--sub);font-size:12.5px;line-height:1.6;margin-bottom:10px;">
+        Stand at your gym, then save it once. From then on, your streak only credits when you check in from there — no more faking it from the couch.
+      </p>
+      <button class="btn-acc" id="btn-set-gym" style="width:100%;border-radius:var(--r2);">📍 Set My Gym Location</button>`;
+    document.getElementById('btn-set-gym').onclick = setGymLocation;
+    return;
+  }
+
+  const checkedInToday = S.lastStreakDate === todayYMD();
+  if (checkedInToday) {
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 0;color:var(--green);font-weight:700;font-size:13px;">✓ Checked in today — streak credited</div>
+      <a href="#" id="lnk-change-gym" style="font-size:10.5px;color:var(--sub);">Change gym location</a>`;
+  } else {
+    el.innerHTML = `
+      <button class="btn-acc" id="btn-gym-checkin" style="width:100%;border-radius:var(--r2);">✅ Check In At Gym</button>
+      <a href="#" id="lnk-change-gym" style="display:block;margin-top:8px;font-size:10.5px;color:var(--sub);">Change gym location</a>`;
+    document.getElementById('btn-gym-checkin').onclick = gymCheckIn;
+  }
+  document.getElementById('lnk-change-gym').onclick = (e) => { e.preventDefault(); changeGymLocation(); };
+}
+
+/* ════════════════════════════════════════════════
+   STAKE VAULT — pre-funded UPI stake unlocked by a
+   real, location-verified FitForge streak.
+   IMPORTANT: this can never move money by itself —
+   the generated link only opens the user's own UPI
+   app for them to approve manually, every time.
+════════════════════════════════════════════════ */
+function buildUpiLink(vpa, name, amount, note) {
+  const params = new URLSearchParams();
+  params.set('pa', vpa);
+  if (name) params.set('pn', name);
+  params.set('am', amount);
+  params.set('cu', 'INR');
+  params.set('tn', note);
+  return 'upi://pay?' + params.toString();
+}
+
+async function startStake() {
+  const amount = parseFloat(document.getElementById('stk-amount').value);
+  const goal   = parseInt(document.getElementById('stk-goal').value);
+  const vpa    = document.getElementById('stk-vpa').value.trim();
+  const name   = document.getElementById('stk-name').value.trim();
+  if (!amount || amount <= 0) return toast('Enter a valid stake amount.', 't-red');
+  if (!goal || goal <= 0)     return toast('Enter a valid streak goal.', 't-red');
+  if (!vpa || !vpa.includes('@')) return toast('Enter a valid UPI ID, e.g. name@okbank.', 't-red');
+
+  S.stake = { amount, goal, vpa, name, status: 'active', startedAt: todayYMD(), sawProgress: calcStreak() > 0 };
+  await save();
+  rStake();
+}
+
+async function cancelStake() {
+  if (!confirm("Cancel this stake? Nothing was ever moved — this just clears the tracker.")) return;
+  S.stake = null;
+  await save();
+  rStake();
+}
+
+function rStake() {
+  const body = document.getElementById('stake-body');
+  if (!body) return;
+
+  if (!S.stake) {
+    body.innerHTML = `
+      <div class="card">
+        <div class="card-hdr">⚙️ Set Up a Stake</div>
+        <div class="sec-lbl" style="margin-top:0;">STAKE AMOUNT (₹)</div>
+        <input type="number" id="stk-amount" placeholder="e.g. 500" min="1" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;color:var(--text);font-size:14px;margin-bottom:10px;">
+        <div class="sec-lbl">STREAK GOAL (DAYS)</div>
+        <input type="number" id="stk-goal" placeholder="e.g. 7" min="1" max="60" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;color:var(--text);font-size:14px;margin-bottom:10px;">
+        <div class="sec-lbl">REWARD ACCOUNT — YOUR UPI ID</div>
+        <input type="text" id="stk-vpa" placeholder="yourname@okbank" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;color:var(--text);font-size:14px;margin-bottom:6px;">
+        <p style="font-size:10.5px;color:var(--sub);line-height:1.5;margin-bottom:10px;">This is where the claim link sends money <b>to</b>. You approve the payment yourself from whichever account you're logged into in GPay — that should be your stake/funding account.</p>
+        <div class="sec-lbl">REWARD ACCOUNT NAME (OPTIONAL)</div>
+        <input type="text" id="stk-name" placeholder="For display in GPay" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;color:var(--text);font-size:14px;margin-bottom:10px;">
+        <button class="btn-acc" id="btn-stk-start" style="width:100%;border-radius:var(--r2);">Start Stake</button>
+      </div>
+      <div class="card">
+        <p style="font-size:11px;color:var(--sub);line-height:1.6;">
+          This can build a pre-filled UPI payment link, but it can <b>never</b> move money by itself — every claim requires you to open your own UPI app and approve it with your PIN, same as any normal payment.
+        </p>
+      </div>`;
+    document.getElementById('btn-stk-start').onclick = startStake;
+    return;
+  }
+
+  const st = S.stake;
+  const streak = calcStreak();
+
+  if (st.status === 'active') {
+    if (streak > 0) st.sawProgress = true;
+    if (streak >= st.goal) { st.status = 'unlocked'; save(); }
+    else if (streak === 0 && st.sawProgress) { st.status = 'forfeited'; save(); }
+  }
+
+  const pct = Math.min(100, Math.round(streak / st.goal * 100));
+  let statusHTML = '';
+  if (st.status === 'active') {
+    statusHTML = `<span class="status-badge" style="background:rgba(60,245,255,.12);color:var(--cyan);">In Progress</span>`;
+  } else if (st.status === 'unlocked') {
+    statusHTML = `<span class="status-badge" style="background:rgba(52,217,106,.15);color:var(--green);">Unlocked</span>`;
+  } else {
+    statusHTML = `<span class="status-badge" style="background:rgba(255,64,96,.12);color:var(--red);">Forfeited</span>`;
+  }
+
+  let actionHTML = '';
+  if (st.status === 'unlocked') {
+    const link = buildUpiLink(st.vpa, st.name, st.amount, `Streak reward - ${st.goal} days`);
+    actionHTML = `
+      <div style="text-align:center;padding:10px 0;">
+        <div style="font-size:34px;font-weight:800;color:var(--green);">₹${st.amount}</div>
+        <div style="font-size:11px;color:var(--sub);margin-top:4px;">🎉 Goal hit — your stake is unlocked</div>
+      </div>
+      <a href="${link}" target="_blank" style="text-decoration:none;">
+        <button class="btn-acc" style="width:100%;border-radius:var(--r2);background:var(--green);">🔓 Claim via GPay / UPI</button>
+      </a>`;
+  } else if (st.status === 'forfeited') {
+    actionHTML = `<p style="text-align:center;color:var(--red);font-size:13px;padding:10px 0;">😔 Your streak broke before reaching ${st.goal} days. Stake stays put.</p>`;
+  }
+
+  body.innerHTML = `
+    <div class="card">
+      <div class="card-hdr">📊 Current Stake</div>
+      ${statusHTML}
+      <div class="stats-grid" style="margin-top:12px;">
+        <div class="stat"><div class="stat-v" style="color:var(--orange);">${streak}</div><div class="stat-l">Streak</div></div>
+        <div class="stat"><div class="stat-v" style="color:var(--cyan);">${st.goal}</div><div class="stat-l">Goal</div></div>
+        <div class="stat"><div class="stat-v" style="color:var(--accent);">₹${st.amount}</div><div class="stat-l">At Stake</div></div>
+      </div>
+      <div class="pb-wrap"><div class="pb-fill" style="width:${pct}%"></div></div>
+      ${actionHTML}
+      <button class="btn-outline" id="btn-stk-cancel" style="width:100%;margin-top:12px;">Cancel this stake</button>
+    </div>`;
+  document.getElementById('btn-stk-cancel').onclick = cancelStake;
 }
 
 function updateUIDPanel() {
@@ -1880,7 +2119,8 @@ function buildWO(dn,sc) {
 
     if(dn>=S.today) S.today=Math.min(dn+1,30);
     const nd=Object.keys(S.sets).filter(k=>k.startsWith(dn+'_')&&S.sets[k].done).length;
-    if(nd>=ts) bumpStreak(); // only credit the real-world streak once the day's workout is fully done
+    // Streak credit no longer comes from here — it requires a location-verified
+    // gym check-in (see gymCheckIn()) so the streak can't be faked from the couch.
     await save();
     sbtn.disabled=false;
     if (nd >= ts) {
