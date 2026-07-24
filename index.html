@@ -24,9 +24,11 @@
 // │  → Your Apps → Web App → Config                     │
 // └─────────────────────────────────────────────────────┘
 import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged }
+import { getAuth, signInAnonymously, onAuthStateChanged,
+         GoogleAuthProvider, signInWithPopup, linkWithPopup, signOut }
                                                   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp }
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp,
+         collection, query, orderBy, limit, getDocs }
                                                   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ▼▼▼ REPLACE EVERYTHING INSIDE THIS OBJECT WITH YOUR CONFIG ▼▼▼
@@ -50,6 +52,7 @@ window._fbReady  = false;
 window._fbDB     = fbDB;
 window._fbAuth   = fbAuth;
 window._fbUserId = null;
+window._fbIsAnon = true;   // true until upgraded to a real (Google) account
 
 // ── Sign in anonymously (no email/password required) ───
 //    Each browser gets a unique anonymous UID automatically.
@@ -58,8 +61,9 @@ window._fbUserId = null;
 onAuthStateChanged(fbAuth, async (user) => {
   if (user) {
     window._fbUserId = user.uid;
+    window._fbIsAnon = user.isAnonymous;
     window._fbReady  = true;
-    console.log('[FitForge] Firebase ready, UID:', user.uid);
+    console.log('[FitForge] Firebase ready, UID:', user.uid, 'anon:', user.isAnonymous);
 
     // Update sync status indicator in UI
     const el = document.getElementById('sync-status');
@@ -67,6 +71,7 @@ onAuthStateChanged(fbAuth, async (user) => {
 
     // ── Load cloud data, then merge with any existing localStorage ──
     await window._loadFromCloud();
+    if (window._refreshAccountUI) window._refreshAccountUI();
 
   } else {
     // No user yet — sign in anonymously
@@ -131,6 +136,67 @@ window._saveToCloud = async function() {
     if (el) { el.textContent = '💾 Local only'; el.style.color = 'var(--orange)'; }
   }
   window._saveToLocal(); // always mirror to localStorage as offline backup
+  window._updateLeaderboard(); // keep the public leaderboard row in sync (best-effort)
+};
+
+// ── GOOGLE SIGN-IN ────────────────────────────────────
+//    Upgrades the current anonymous account to a real Google account via
+//    linkWithPopup, which KEEPS the same UID — so all existing data and its
+//    cloud path carry over untouched. If that Google account was already used
+//    on another device, we fall back to signing straight into it.
+window._signInGoogle = async function() {
+  const provider = new GoogleAuthProvider();
+  try {
+    const cur = fbAuth.currentUser;
+    if (cur && cur.isAnonymous) {
+      await linkWithPopup(cur, provider);   // preserves UID + data
+    } else {
+      await signInWithPopup(fbAuth, provider);
+    }
+    return { ok: true };
+  } catch (e) {
+    // The Google account already has its own FitForge account — sign into it.
+    if (e.code === 'auth/credential-already-in-use' || e.code === 'auth/email-already-in-use') {
+      try { await signInWithPopup(fbAuth, provider); return { ok: true, switched: true }; }
+      catch (e2) { return { ok: false, error: e2.message }; }
+    }
+    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+      return { ok: false, cancelled: true };
+    }
+    return { ok: false, error: e.message };
+  }
+};
+
+window._signOutGoogle = async function() {
+  try { await signOut(fbAuth); return { ok: true }; }
+  catch (e) { return { ok: false, error: e.message }; }
+};
+
+// ── LEADERBOARD ───────────────────────────────────────
+//    Public per-user row at leaderboard/{uid}. Only written for signed-in
+//    (non-anonymous) users who've set a display name. Shows only the self-set
+//    name — never the Google name/photo.
+window._updateLeaderboard = async function() {
+  try {
+    if (!window._fbReady || window._fbIsAnon) return;
+    const name = window._getDisplayName && window._getDisplayName();
+    if (!name) return;
+    const stats = window._getLeaderboardStats ? window._getLeaderboardStats() : null;
+    if (!stats) return;
+    const ref = doc(fbDB, 'leaderboard', window._fbUserId);
+    await setDoc(ref, { name, ...stats, updatedAt: serverTimestamp() });
+  } catch (e) {
+    console.warn('[FitForge] Leaderboard update failed:', e.message);
+  }
+};
+
+window._fetchLeaderboard = async function() {
+  const ref = collection(fbDB, 'leaderboard');
+  const q   = query(ref, orderBy('xp', 'desc'), limit(50));
+  const snap = await getDocs(q);
+  const rows = [];
+  snap.forEach(d => rows.push({ uid: d.id, ...d.data() }));
+  return rows;
 };
 
 // Helper: merge two state objects — cloud takes priority for keys that exist in both
@@ -781,14 +847,14 @@ a { text-decoration: none; }
 }
 #levelup-overlay.show { opacity: 1; pointer-events: auto; }
 
-/* ── First-use start-rotation picker ── */
-#start-overlay {
+/* ── First-use start-rotation picker + name prompt ── */
+#start-overlay, #name-overlay {
   position: fixed; inset: 0; z-index: 10001;
-  background: rgba(7,7,15,.97);
+  background: var(--bg);
   display: none; flex-direction: column; align-items: center; justify-content: center;
   padding: 20px;
 }
-#start-overlay.show { display: flex; }
+#start-overlay.show, #name-overlay.show { display: flex; }
 .sp-title { font-family: var(--fd); font-size: 26px; letter-spacing: 3px; color: var(--accent-ink); }
 .sp-sub { font-size: 12.5px; color: var(--sub2); text-align: center; max-width: 320px; line-height: 1.6; margin: 8px 0 18px; }
 .sp-btn {
@@ -966,6 +1032,14 @@ a { text-decoration: none; }
     <div id="pr-body" style="display:none;"></div>
   </div>
 
+  <!-- One-time display-name prompt (after Google sign-in) -->
+  <div id="name-overlay">
+    <div class="sp-title">CHOOSE YOUR NAME</div>
+    <p class="sp-sub">This is the name shown on the leaderboard. Pick anything — it doesn't have to be your real name.</p>
+    <input type="text" id="name-input" maxlength="20" placeholder="e.g. IronMike" style="width:100%;max-width:320px;background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:12px;color:var(--text);font-size:16px;text-align:center;">
+    <button class="btn-acc" id="name-save" style="width:100%;max-width:320px;border-radius:var(--r2);margin-top:12px;">Save Name</button>
+  </div>
+
   <!-- First-use start-rotation picker -->
   <div id="start-overlay">
     <div class="sp-title">PICK YOUR DAY 1</div>
@@ -1030,6 +1104,15 @@ a { text-decoration: none; }
     <div id="stake-body"></div>
   </div>
 
+  <!-- ════ SCREEN: RANK (account + leaderboard) ════ -->
+  <div class="screen" id="s-rank">
+    <div style="padding:15px 13px 5px;">
+      <div class="card-hdr" style="font-size:20px;letter-spacing:2px;">LEADERBOARD</div>
+    </div>
+    <div id="account-body"></div>
+    <div id="leaderboard-body"></div>
+  </div>
+
   <!-- ════ BOTTOM NAV ════ -->
   <nav id="nav">
     <button class="nb on" id="nb-d"  onclick="sw('dash',this)">
@@ -1051,6 +1134,10 @@ a { text-decoration: none; }
     <button class="nb" id="nb-stake" onclick="sw('stake',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
       Stake
+    </button>
+    <button class="nb" id="nb-rank" onclick="sw('rank',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zM17 5h2a2 2 0 01-2 3M7 5H5a2 2 0 002 3"/></svg>
+      Rank
     </button>
   </nav>
 </div>
@@ -1505,6 +1592,7 @@ let S = {
   gym: null,          // { lat, lng, radius } — saved gym location for check-in verification
   stake: null,        // { amount, goal, vpa, name, status, startedAt, sawProgress }
   startOffset: null,  // 0-6 index into PROG chosen at first use (null = not chosen yet)
+  displayName: null,  // leaderboard name, set once after Google sign-in (not the Google name)
 };
 buildSCH();
 
@@ -1530,6 +1618,10 @@ window._getLocalState   = () => {
 window._saveToLocal     = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(e) {} };
 window._loadFromLocal   = () => { const r = window._getLocalState(); if (r) S = { ...S, ...r }; };
 window._applyState      = (data) => { if (data) S = { ...S, ...data }; };
+// Leaderboard hooks used by the Firebase module:
+window._getDisplayName     = () => S.displayName || null;
+window._getLeaderboardStats = () => ({ level: getLevelFromXP(S.xp), xp: S.xp||0, streak: calcStreak() });
+window._refreshAccountUI    = () => { if (document.getElementById('s-rank')?.classList.contains('active')) rRank(); };
 window._bootUI          = () => {
   // Rebuild the schedule with the loaded rotation choice. Users with progress
   // from before this feature keep the original Push-first order.
@@ -1855,13 +1947,14 @@ function sw(id, btn) {
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
   document.getElementById('s-'+id).classList.add('active');
   if (btn) btn.classList.add('on');
-  const subs = { dash:'ADAPTIVE COACH', wo:'EXECUTE · FORGE · ADAPT', hist:'HISTORY & RECORDS', wt:'BODYWEIGHT LOG', stake:'STAKE VAULT' };
+  const subs = { dash:'ADAPTIVE COACH', wo:'EXECUTE · FORGE · ADAPT', hist:'HISTORY & RECORDS', wt:'BODYWEIGHT LOG', stake:'STAKE VAULT', rank:'LEADERBOARD' };
   document.getElementById('tb-sub').textContent = subs[id] || 'FITFORGE';
   if (id==='dash') rDash();
   if (id==='wo')   rWO();
   if (id==='hist') { histTab('log'); }
   if (id==='wt')   rWT();
   if (id==='stake') rStake();
+  if (id==='rank') rRank();
 }
 function goWO() { S.viewDay = S.today; sw('wo', document.getElementById('nb-wo')); }
 
@@ -2180,6 +2273,117 @@ function rStake() {
       <button class="btn-outline" id="btn-stk-cancel" style="width:100%;margin-top:12px;">Cancel this stake</button>
     </div>`;
   document.getElementById('btn-stk-cancel').onclick = cancelStake;
+}
+
+/* ════════════════════════════════════════════════
+   ACCOUNT + LEADERBOARD
+   Sign in with Google (upgrades the anonymous account, keeping data),
+   set a one-time leaderboard name, and rank everyone by XP.
+════════════════════════════════════════════════ */
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function doGoogleSignIn() {
+  const btn = document.getElementById('btn-signin');
+  if (btn) { btn.disabled = true; btn.textContent = 'Opening Google…'; }
+  const res = await window._signInGoogle();
+  if (res.ok) {
+    toast('✅ Signed in!', 't-green');
+    if (!S.displayName) showNamePrompt();
+    else { await save(); rRank(); }
+  } else if (res.cancelled) {
+    rRank();
+  } else {
+    toast('⚠️ Sign-in failed: ' + (res.error || 'try again'), 't-red');
+    rRank();
+  }
+}
+
+async function doSignOut() {
+  if (!confirm('Sign out? Your data stays synced to this account and you can sign back in anytime.')) return;
+  await window._signOutGoogle();
+  location.reload(); // clean re-boot back into an anonymous session
+}
+
+function showNamePrompt() {
+  const ov = document.getElementById('name-overlay');
+  const input = document.getElementById('name-input');
+  input.value = S.displayName || '';
+  ov.classList.add('show');
+  input.focus();
+  document.getElementById('name-save').onclick = async () => {
+    const name = input.value.trim();
+    if (name.length < 2) { toast('Name must be at least 2 characters', 't-red'); return; }
+    S.displayName = name;
+    ov.classList.remove('show');
+    await save();               // save() → _saveToCloud() → _updateLeaderboard()
+    rRank();
+    toast(`👋 Welcome, ${name}!`, 't-green');
+  };
+}
+
+function rAccount() {
+  const el = document.getElementById('account-body');
+  if (!el) return;
+  const signedIn = window._fbReady && !window._fbIsAnon;
+  if (signedIn) {
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-hdr">👤 ACCOUNT</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div>
+            <div style="font-size:15px;font-weight:700;">${esc(S.displayName || 'Set your name')}</div>
+            <div style="font-size:11px;color:var(--sub);margin-top:2px;">Signed in · synced across your devices</div>
+          </div>
+          <button class="btn-outline" id="btn-editname" style="width:auto;white-space:nowrap;">Edit name</button>
+        </div>
+        <button class="btn-outline" id="btn-signout" style="width:100%;margin-top:10px;">Sign out</button>
+      </div>`;
+    document.getElementById('btn-editname').onclick = showNamePrompt;
+    document.getElementById('btn-signout').onclick = doSignOut;
+  } else {
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-hdr">👤 ACCOUNT</div>
+        <p style="font-size:12.5px;color:var(--sub);line-height:1.6;margin-bottom:12px;">
+          You're training as a <b>guest</b> (data saved on this device). Sign in with Google to sync across devices and appear on the leaderboard.
+        </p>
+        <button class="btn-acc" id="btn-signin" style="width:100%;border-radius:var(--r2);">Sign in with Google</button>
+      </div>`;
+    document.getElementById('btn-signin').onclick = doGoogleSignIn;
+  }
+}
+
+async function rRank() {
+  rAccount();
+  const el = document.getElementById('leaderboard-body');
+  if (!el) return;
+  el.innerHTML = `<div class="card"><div class="card-hdr">🏆 LEADERBOARD</div><p style="font-size:12px;color:var(--sub);">Loading…</p></div>`;
+  let rows = [];
+  try {
+    rows = await window._fetchLeaderboard();
+  } catch (e) {
+    el.innerHTML = `<div class="card"><div class="card-hdr">🏆 LEADERBOARD</div><p style="font-size:12px;color:var(--orange);line-height:1.6;">Leaderboard unavailable — this needs the Firestore leaderboard rules deployed. ${window._fbIsAnon ? 'Sign in to compete.' : ''}</p></div>`;
+    return;
+  }
+  const myUid = window._fbUserId;
+  const medal = i => i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="color:var(--sub);">#${i+1}</span>`;
+  let list;
+  if (!rows.length) {
+    list = `<p style="font-size:12.5px;color:var(--sub);line-height:1.6;">No one's on the board yet. ${window._fbIsAnon ? 'Sign in and be the first!' : "You're the first — keep training!"}</p>`;
+  } else {
+    list = rows.map((r,i) => {
+      const me = r.uid === myUid;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border2);${me?'background:rgba(232,255,60,.06);border-radius:8px;':''}">
+        <div style="width:28px;text-align:center;font-weight:700;font-size:14px;">${medal(i)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:${me?'800':'600'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.name||'—')}${me?' <span style="font-size:10px;color:var(--accent-ink);">(you)</span>':''}</div>
+          <div style="font-size:10.5px;color:var(--sub);font-family:var(--fm);">LVL ${r.level||1} · ${(r.streak||0)}🔥</div>
+        </div>
+        <div style="font-family:var(--fm);font-size:13px;font-weight:700;color:var(--accent-ink);">${(r.xp||0).toLocaleString()}<span style="font-size:9px;color:var(--sub);"> XP</span></div>
+      </div>`;
+    }).join('');
+  }
+  el.innerHTML = `<div class="card"><div class="card-hdr">🏆 LEADERBOARD</div>${list}</div>`;
 }
 
 function updateUIDPanel() {
