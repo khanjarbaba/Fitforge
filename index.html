@@ -159,6 +159,7 @@ function mergeWlog(a, b) {
    DESIGN TOKENS
 ══════════════════════════════════════════════════ */
 :root {
+  /* ── DARK THEME (default) ── */
   --bg:      #07070f;
   --bg2:     #0d0d18;
   --bg3:     #131320;
@@ -166,7 +167,8 @@ function mergeWlog(a, b) {
   --card2:   #181828;
   --border:  #22223a;
   --border2: #1a1a2e;
-  --accent:  #e8ff3c;
+  --accent:  #e8ff3c;   /* fills / button backgrounds */
+  --accent-ink: #e8ff3c;/* accent used as TEXT (kept separate so light theme can darken it) */
   --red:     #ff4060;
   --cyan:    #3cf5ff;
   --purple:  #b06cff;
@@ -174,17 +176,69 @@ function mergeWlog(a, b) {
   --orange:  #ff9a3c;
   --yellow:  #ffd93d;
   --text:    #eeeef8;
-  --sub:     #55556e;
-  --sub2:    #7a7a90;
+  --sub:     #8f8fab;   /* brightened from #55556e — old value failed WCAG contrast on the dark bg */
+  --sub2:    #aeaec6;
   --fd: 'Bebas Neue', sans-serif;
   --fb: 'DM Sans', sans-serif;
   --fm: 'JetBrains Mono', monospace;
   --r: 12px; --r2: 8px; --r3: 6px; --nav: 64px;
+  --fs: 1;              /* font-size scale (zoom): Small .92 / Medium 1 / Large 1.15 */
+}
+
+/* ── LIGHT THEME ──
+   Applied when the OS is in light mode (unless the user has forced dark),
+   or when the user explicitly picks Light. Dark stays the default. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:      #eef0f5;
+    --bg2:     #e5e8f0;
+    --bg3:     #dde1ea;
+    --card:    #ffffff;
+    --card2:   #f3f5fa;
+    --border:  #d2d7e2;
+    --border2: #e3e6ee;
+    --accent:  #d4e800;   /* still vivid enough for black button text */
+    --accent-ink: #4f6b00;/* darkened so headings stay readable on white */
+    --red:     #d81b4a;
+    --cyan:    #0a8fa8;
+    --purple:  #7c3fd6;
+    --green:   #1f9d52;
+    --orange:  #c2600a;
+    --yellow:  #9a7d00;
+    --text:    #16181f;
+    --sub:     #5c6172;
+    --sub2:    #454a58;
+  }
+}
+:root[data-theme="light"] {
+  --bg:      #eef0f5;
+  --bg2:     #e5e8f0;
+  --bg3:     #dde1ea;
+  --card:    #ffffff;
+  --card2:   #f3f5fa;
+  --border:  #d2d7e2;
+  --border2: #e3e6ee;
+  --accent:  #d4e800;
+  --accent-ink: #4f6b00;
+  --red:     #d81b4a;
+  --cyan:    #0a8fa8;
+  --purple:  #7c3fd6;
+  --green:   #1f9d52;
+  --orange:  #c2600a;
+  --yellow:  #9a7d00;
+  --text:    #16181f;
+  --sub:     #5c6172;
+  --sub2:    #454a58;
 }
 
 *, *::before, *::after {
   box-sizing: border-box; margin: 0; padding: 0;
   -webkit-tap-highlight-color: transparent;
+}
+html {
+  /* zoom scales the whole UI uniformly — the only reliable lever for an app
+     full of fixed px sizes, and it handles the fixed nav like browser zoom. */
+  zoom: var(--fs);
 }
 html, body {
   background: var(--bg); color: var(--text);
@@ -209,20 +263,20 @@ a { text-decoration: none; }
 }
 .topbar-left h1 {
   font-family: var(--fd); font-size: 23px; letter-spacing: 2.5px;
-  color: var(--accent); line-height: 1;
+  color: var(--accent-ink); line-height: 1;
 }
 .topbar-left p {
-  font-family: var(--fm); font-size: 9px; color: var(--sub);
-  margin-top: 1px; letter-spacing: 1px;
+  font-family: var(--fm); font-size: 10px; color: var(--sub);
+  margin-top: 2px; letter-spacing: 1px;
 }
 .topbar-right { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .tbadge {
-  font-family: var(--fm); font-size: 9.5px; border-radius: 20px;
+  font-family: var(--fm); font-size: 10.5px; border-radius: 20px;
   padding: 3px 8px; border: 1px solid; white-space: nowrap;
 }
 .tbadge-w { background: rgba(60,245,255,.07);  color: var(--cyan);   border-color: rgba(60,245,255,.18); }
-.tbadge-d { background: rgba(232,255,60,.07);  color: var(--accent); border-color: rgba(232,255,60,.18); }
-.tbadge-s { background: rgba(52,217,106,.07);  color: var(--green);  border-color: rgba(52,217,106,.18); font-size:9px; }
+.tbadge-d { background: rgba(232,255,60,.07);  color: var(--accent-ink); border-color: rgba(232,255,60,.18); }
+.tbadge-s { background: rgba(52,217,106,.07);  color: var(--green);  border-color: rgba(52,217,106,.18); font-size:10px; }
 
 .screen {
   display: none; flex: 1; overflow-y: auto;
@@ -240,12 +294,12 @@ a { text-decoration: none; }
 }
 #loading-overlay h2 {
   font-family: var(--fd); font-size: 36px;
-  color: var(--accent); letter-spacing: 4px;
+  color: var(--accent-ink); letter-spacing: 4px;
 }
 #loading-overlay p { font-family: var(--fm); font-size: 11px; color: var(--sub); }
 .spinner {
   width: 36px; height: 36px; border: 3px solid var(--border);
-  border-top-color: var(--accent); border-radius: 50%;
+  border-top-color: var(--accent-ink); border-radius: 50%;
   animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -260,11 +314,11 @@ a { text-decoration: none; }
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 3px;
   background: none; border: none; color: var(--sub);
-  font-size: 8.5px; font-weight: 700; letter-spacing: .8px;
+  font-size: 10px; font-weight: 700; letter-spacing: .5px;
   text-transform: uppercase; transition: color .15s; padding-bottom: 4px;
 }
 .nb svg { width: 19px; height: 19px; }
-.nb.on { color: var(--accent); }
+.nb.on { color: var(--accent-ink); }
 .nb.on svg { filter: drop-shadow(0 0 5px var(--accent)); }
 
 /* ══════════════════════════════════════════════════
@@ -274,8 +328,8 @@ a { text-decoration: none; }
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--r); padding: 15px; margin: 9px 13px;
 }
-.card-hdr { font-family: var(--fd); font-size: 15px; letter-spacing: 1.5px; color: var(--accent); margin-bottom: 11px; }
-.sec-lbl { font-family: var(--fm); font-size: 9.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--sub); margin-bottom: 7px; }
+.card-hdr { font-family: var(--fd); font-size: 15px; letter-spacing: 1.5px; color: var(--accent-ink); margin-bottom: 11px; }
+.sec-lbl { font-family: var(--fm); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--sub); margin-bottom: 7px; }
 
 .btn-acc {
   background: var(--accent); color: #000; border: none;
@@ -295,6 +349,15 @@ a { text-decoration: none; }
 .pb-wrap { background: var(--bg3); border-radius: 3px; height: 5px; overflow: hidden; margin-top: 7px; }
 .pb-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--accent)); border-radius: 3px; transition: width .5s ease; }
 .status-badge { display: inline-block; font-family: var(--fm); font-size: 10px; font-weight: 700; letter-spacing: .5px; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+
+/* Segmented control (theme / text-size settings) */
+.seg { display: flex; gap: 6px; }
+.seg button {
+  flex: 1; background: var(--card2); border: 1px solid var(--border); color: var(--sub2);
+  border-radius: var(--r2); padding: 9px 4px; font-size: 12.5px; font-weight: 600;
+  font-family: var(--fb); transition: all .15s;
+}
+.seg button.on { background: var(--accent); color: #0a0a12; border-color: var(--accent); }
 
 /* ══════════════════════════════════════════════════
    SYNC BANNER
@@ -328,14 +391,14 @@ a { text-decoration: none; }
   width: 200px; height: 200px;
   background: radial-gradient(circle, rgba(232,255,60,.06) 0%, transparent 65%); border-radius: 50%;
 }
-.hero-num { font-family: var(--fd); font-size: 70px; color: var(--accent); line-height: .9; letter-spacing: 4px; }
+.hero-num { font-family: var(--fd); font-size: 70px; color: var(--accent-ink); line-height: .9; letter-spacing: 4px; }
 .hero-name { font-size: 15px; font-weight: 700; margin-top: 5px; }
 .hero-meta { font-family: var(--fm); font-size: 10px; color: var(--sub); margin-top: 3px; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; padding: 9px 13px 0; }
 .stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 11px 6px; text-align: center; }
 .stat-v { font-family: var(--fd); font-size: 24px; letter-spacing: 1px; }
-.stat-l { font-family: var(--fm); font-size: 9px; color: var(--sub); margin-top: 1px; }
+.stat-l { font-family: var(--fm); font-size: 10.5px; color: var(--sub); margin-top: 2px; }
 
 /* ══════════════════════════════════════════════════
    WORKOUT SCREEN
@@ -347,7 +410,7 @@ a { text-decoration: none; }
   border-radius: 20px; padding: 5px 12px; font-size: 10.5px;
   color: var(--sub); font-family: var(--fm); white-space: nowrap; transition: all .13s;
 }
-.dpill.on  { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.dpill.on  { background: var(--accent); color: #000; border-color: var(--accent-ink); font-weight: 700; }
 .dpill.done { border-color: var(--green); color: var(--green); }
 
 /* Warm-up */
@@ -373,7 +436,7 @@ a { text-decoration: none; }
 
 .ex-hdr { padding: 12px 14px 11px; border-bottom: 1px solid var(--border2); display: flex; align-items: flex-start; justify-content: space-between; }
 .ex-title  { font-size: 14px; font-weight: 700; }
-.ex-muscle { font-family: var(--fm); font-size: 10px; color: var(--purple); margin-top: 2px; }
+.ex-muscle { font-family: var(--fm); font-size: 11px; color: var(--purple); margin-top: 2px; }
 .ex-ico    { font-size: 18px; flex-shrink: 0; margin-left: 8px; margin-top: 1px; }
 .ex-target { font-size: 11px; color: var(--sub2); line-height: 1.5; padding: 8px 14px; border-bottom: 1px solid var(--border2); }
 .ex-target b { color: var(--purple); font-weight: 700; }
@@ -385,15 +448,15 @@ a { text-decoration: none; }
   justify-content: space-between; gap: 8px; flex-wrap: wrap;
 }
 .sug-left  { flex: 1; min-width: 0; }
-.sug-label { font-family: var(--fm); font-size: 9.5px; color: var(--sub); }
-.sug-val   { font-family: var(--fm); font-size: 12px; font-weight: 700; }
-.sug-last  { font-family: var(--fm); font-size: 9.5px; color: var(--sub); }
-.sug-1rm   { font-family: var(--fm); font-size: 10px; color: var(--purple); margin-top: 2px; }
-.sug-right { font-family: var(--fm); font-size: 9.5px; color: var(--sub); text-align: right; white-space: nowrap; }
+.sug-label { font-family: var(--fm); font-size: 10.5px; color: var(--sub); }
+.sug-val   { font-family: var(--fm); font-size: 13px; font-weight: 700; }
+.sug-last  { font-family: var(--fm); font-size: 10.5px; color: var(--sub); }
+.sug-1rm   { font-family: var(--fm); font-size: 11px; color: var(--purple); margin-top: 2px; }
+.sug-right { font-family: var(--fm); font-size: 10.5px; color: var(--sub); text-align: right; white-space: nowrap; }
 
 /* Coach tip */
 .coach-tip { margin: 6px 13px 2px; padding: 7px 12px; border-radius: var(--r2); font-size: 12px; font-weight: 600; display: none; border-left: 3px solid; }
-.coach-tip.tip-up   { background: rgba(232,255,60,.06); border-color: var(--accent); color: var(--accent); display: block; }
+.coach-tip.tip-up   { background: rgba(232,255,60,.06); border-color: var(--accent-ink); color: var(--accent-ink); display: block; }
 .coach-tip.tip-ok   { background: rgba(52,217,106,.06); border-color: var(--green);  color: var(--green);  display: block; }
 .coach-tip.tip-down { background: rgba(255,64,96,.06);  border-color: var(--red);    color: var(--red);    display: block; }
 
@@ -427,7 +490,7 @@ a { text-decoration: none; }
 }
 .set-input:focus  { border-color: var(--cyan); }
 .set-input::placeholder { color: var(--sub); font-size: 10px; font-weight: 400; }
-.set-input.si-up  { border-color: var(--accent); color: var(--accent); }
+.set-input.si-up  { border-color: var(--accent-ink); color: var(--accent-ink); }
 .set-input.si-ok  { border-color: var(--green);  color: var(--green);  }
 .set-input.si-dn  { border-color: var(--red);    color: var(--red);    }
 
@@ -524,7 +587,7 @@ a { text-decoration: none; }
   border-radius: var(--r2); color: var(--text); font-family: var(--fm);
   font-size: 18px; font-weight: 700; padding: 10px 13px; outline: none; transition: border-color .13s;
 }
-.w-row input:focus { border-color: var(--accent); }
+.w-row input:focus { border-color: var(--accent-ink); }
 .rem-sel {
   background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r2);
   color: var(--text); font-size: 13px; padding: 9px 11px; width: 100%;
@@ -572,7 +635,7 @@ a { text-decoration: none; }
   font-family: var(--fm); font-size: 9.5px; border-radius: 20px;
   padding: 3px 9px; border: 1px solid; white-space: nowrap; cursor: default;
   background: linear-gradient(135deg,rgba(232,255,60,.12),rgba(232,255,60,.05));
-  color: var(--accent); border-color: rgba(232,255,60,.3);
+  color: var(--accent-ink); border-color: rgba(232,255,60,.3);
   text-shadow: 0 0 8px rgba(232,255,60,.4);
 }
 .lv-badge.fire {
@@ -598,7 +661,7 @@ a { text-decoration: none; }
   display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
 }
 .xp-level-label {
-  font-family: var(--fd); font-size: 20px; letter-spacing: 2px; color: var(--accent);
+  font-family: var(--fd); font-size: 20px; letter-spacing: 2px; color: var(--accent-ink);
 }
 .xp-fraction {
   font-family: var(--fm); font-size: 11px; color: var(--sub2);
@@ -628,7 +691,7 @@ a { text-decoration: none; }
   border-radius: 4px; border: 1px solid;
 }
 .xp-mult-badge.active {
-  background: rgba(232,255,60,.1); color: var(--accent); border-color: rgba(232,255,60,.25);
+  background: rgba(232,255,60,.1); color: var(--accent-ink); border-color: rgba(232,255,60,.25);
 }
 .xp-mult-badge.fire {
   background: rgba(255,100,40,.12); color: var(--orange); border-color: rgba(255,100,40,.3);
@@ -645,7 +708,7 @@ a { text-decoration: none; }
   margin: 0 13px 5px; padding: 9px 13px;
   background: linear-gradient(135deg,rgba(232,255,60,.1),rgba(176,255,60,.05));
   border: 1px solid rgba(232,255,60,.3); border-radius: var(--r2);
-  font-size: 12px; font-weight: 700; color: var(--accent);
+  font-size: 12px; font-weight: 700; color: var(--accent-ink);
   display: none; align-items: center; gap: 8px;
 }
 .pr-banner.show { display: flex; }
@@ -658,7 +721,7 @@ a { text-decoration: none; }
 
 /* ── Per-set XP flash ── */
 .set-xp-flash {
-  font-family: var(--fm); font-size: 10px; color: var(--accent);
+  font-family: var(--fm); font-size: 10px; color: var(--accent-ink);
   font-weight: 700; text-align: center; min-width: 52px;
   opacity: 0; transition: opacity .2s;
 }
@@ -726,7 +789,7 @@ a { text-decoration: none; }
   padding: 20px;
 }
 #start-overlay.show { display: flex; }
-.sp-title { font-family: var(--fd); font-size: 26px; letter-spacing: 3px; color: var(--accent); }
+.sp-title { font-family: var(--fd); font-size: 26px; letter-spacing: 3px; color: var(--accent-ink); }
 .sp-sub { font-size: 12.5px; color: var(--sub2); text-align: center; max-width: 320px; line-height: 1.6; margin: 8px 0 18px; }
 .sp-btn {
   width: 100%; max-width: 320px; background: var(--card); border: 1px solid var(--border);
@@ -735,7 +798,7 @@ a { text-decoration: none; }
   display: flex; justify-content: space-between; align-items: center; gap: 10px;
 }
 .sp-btn span { font-family: var(--fm); font-size: 9.5px; color: var(--sub); font-weight: 400; text-align: right; }
-.sp-btn:active { border-color: var(--accent); }
+.sp-btn:active { border-color: var(--accent-ink); }
 .lu-stars { font-size: 40px; letter-spacing: 8px; animation: starSpin 1s ease; }
 @keyframes starSpin { from { transform: rotate(-20deg) scale(.5); opacity:0; } to { transform: rotate(0) scale(1); opacity:1; } }
 .lu-title {
@@ -744,7 +807,7 @@ a { text-decoration: none; }
 }
 .lu-level {
   font-family: var(--fd); font-size: 56px; letter-spacing: 4px;
-  color: var(--accent); line-height: 1;
+  color: var(--accent-ink); line-height: 1;
   text-shadow: 0 0 30px rgba(232,255,60,.6);
   animation: luPop .4s ease .1s both;
 }
@@ -771,7 +834,7 @@ a { text-decoration: none; }
 }
 .pr-row:last-child { border-bottom: none; }
 .pr-ex { font-weight: 600; }
-.pr-val { font-family: var(--fm); font-size: 11px; color: var(--accent); text-align: right; }
+.pr-val { font-family: var(--fm); font-size: 11px; color: var(--accent-ink); text-align: right; }
 .pr-date { font-family: var(--fm); font-size: 10px; color: var(--sub); text-align: right; }
 </style>
 </head>
@@ -844,6 +907,21 @@ a { text-decoration: none; }
       </div>
     </div>
     <div class="card">
+      <div class="card-hdr">⚙️ DISPLAY</div>
+      <div class="sec-lbl" style="margin-top:0;">THEME</div>
+      <div class="seg" id="seg-theme">
+        <button data-v="auto" onclick="setTheme('auto')">Auto</button>
+        <button data-v="light" onclick="setTheme('light')">Light</button>
+        <button data-v="dark" onclick="setTheme('dark')">Dark</button>
+      </div>
+      <div class="sec-lbl" style="margin-top:12px;">TEXT SIZE</div>
+      <div class="seg" id="seg-fs">
+        <button data-v="0.92" onclick="setFontScale(0.92)">Small</button>
+        <button data-v="1" onclick="setFontScale(1)">Medium</button>
+        <button data-v="1.15" onclick="setFontScale(1.15)">Large</button>
+      </div>
+    </div>
+    <div class="card">
       <div class="card-hdr">30-DAY PROGRESS</div>
       <div id="prog-text" style="font-family:var(--fm);font-size:11px;color:var(--sub);margin-bottom:5px;"></div>
       <div class="pb-wrap"><div class="pb-fill" id="prog-fill" style="width:0%"></div></div>
@@ -881,7 +959,7 @@ a { text-decoration: none; }
   <div class="screen" id="s-hist">
     <div style="padding:15px 13px 5px;display:flex;gap:8px;align-items:center;">
       <div class="card-hdr" style="font-size:20px;letter-spacing:2px;margin-bottom:0;">HISTORY</div>
-      <button class="btn-sm" id="hist-tab-log" onclick="histTab('log')" style="border-color:var(--accent);color:var(--accent);">Sessions</button>
+      <button class="btn-sm" id="hist-tab-log" onclick="histTab('log')" style="border-color:var(--accent-ink);color:var(--accent-ink);">Sessions</button>
       <button class="btn-sm" id="hist-tab-pr" onclick="histTab('pr')">PRs</button>
     </div>
     <div id="hist-body"></div>
@@ -984,6 +1062,48 @@ a { text-decoration: none; }
 ══════════════════════════════════════════════════════════════ -->
 <script>
 'use strict';
+
+/* ════════════════════════════════════════════════
+   DISPLAY SETTINGS — theme + text size.
+   Stored per-device in their own localStorage keys (not the synced workout
+   state) and applied immediately so there's no flash of the wrong theme on
+   load. Theme 'auto' follows the phone's system setting.
+════════════════════════════════════════════════ */
+function applyTheme(mode) {
+  // 'auto' removes the override so the prefers-color-scheme media query rules.
+  if (mode === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', mode);
+}
+function applyFontScale(scale) {
+  document.documentElement.style.setProperty('--fs', scale);
+}
+function loadDisplaySettings() {
+  const theme = localStorage.getItem('ff_theme') || 'auto';
+  const fs = parseFloat(localStorage.getItem('ff_fontscale')) || 1;
+  applyTheme(theme);
+  applyFontScale(fs);
+  return { theme, fs };
+}
+function markSeg(groupId, val) {
+  document.querySelectorAll(`#${groupId} button`).forEach(b =>
+    b.classList.toggle('on', b.dataset.v === String(val)));
+}
+function setTheme(mode) {
+  localStorage.setItem('ff_theme', mode);
+  applyTheme(mode);
+  markSeg('seg-theme', mode);
+}
+function setFontScale(scale) {
+  localStorage.setItem('ff_fontscale', scale);
+  applyFontScale(scale);
+  markSeg('seg-fs', scale);
+}
+function refreshDisplaySettingsUI() {
+  markSeg('seg-theme', localStorage.getItem('ff_theme') || 'auto');
+  markSeg('seg-fs', parseFloat(localStorage.getItem('ff_fontscale')) || 1);
+}
+// Apply saved theme/size the moment the script parses — before Firebase/UI boot.
+loadDisplaySettings();
 
 /* ════════════════════════════════════════════════
    WARM-UPS — self-contained, no external links to rot.
@@ -1809,6 +1929,7 @@ function rDash() {
   updateXPUI();
 
   rGymCheckin(sc);
+  refreshDisplaySettingsUI();
 }
 // Real-time streak: counts consecutive calendar days credited via bumpStreak().
 // Breaks (reads as 0) once a day is missed, regardless of in-app day progress.
@@ -2052,7 +2173,7 @@ function rStake() {
       <div class="stats-grid" style="margin-top:12px;">
         <div class="stat"><div class="stat-v" style="color:var(--orange);">${streak}</div><div class="stat-l">Streak</div></div>
         <div class="stat"><div class="stat-v" style="color:var(--cyan);">${st.goal}</div><div class="stat-l">Goal</div></div>
-        <div class="stat"><div class="stat-v" style="color:var(--accent);">₹${st.amount}</div><div class="stat-l">At Stake</div></div>
+        <div class="stat"><div class="stat-v" style="color:var(--accent-ink);">₹${st.amount}</div><div class="stat-l">At Stake</div></div>
       </div>
       <div class="pb-wrap"><div class="pb-fill" style="width:${pct}%"></div></div>
       ${actionHTML}
@@ -2273,7 +2394,7 @@ function mkEx(dn,ei,ex,bossDay=false){
   // Set table header
   const thdr=mk('div','set-table-hdr');
   thdr.style.gridTemplateColumns='28px 1fr 1fr 30px 20px 52px';
-  thdr.innerHTML=`<span>Set</span><span>Weight kg</span><span>Reps done</span><span>✓</span><span></span><span style="color:var(--accent);text-align:center;">XP</span>`;
+  thdr.innerHTML=`<span>Set</span><span>Weight kg</span><span>Reps done</span><span>✓</span><span></span><span style="color:var(--accent-ink);text-align:center;">XP</span>`;
   block.appendChild(thdr);
 
   // Set rows
@@ -2522,7 +2643,7 @@ function rPRs() {
     <div class="card-hdr">YOUR STATS</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
       <div style="text-align:center;padding:10px;background:var(--bg3);border-radius:var(--r2);">
-        <div style="font-family:var(--fd);font-size:28px;color:var(--accent);">${info.lv}</div>
+        <div style="font-family:var(--fd);font-size:28px;color:var(--accent-ink);">${info.lv}</div>
         <div style="font-family:var(--fm);font-size:9px;color:var(--sub);">LEVEL · ${info.title}</div>
       </div>
       <div style="text-align:center;padding:10px;background:var(--bg3);border-radius:var(--r2);">
