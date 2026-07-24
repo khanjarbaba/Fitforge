@@ -416,6 +416,35 @@ a { text-decoration: none; }
 .pb-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--accent)); border-radius: 3px; transition: width .5s ease; }
 .status-badge { display: inline-block; font-family: var(--fm); font-size: 10px; font-weight: 700; letter-spacing: .5px; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
 
+/* ── v2 IA: primary CTA, entry rows, list rows, sub-page headers ── */
+.btn-cta {
+  width: 100%; padding: 16px; border: none; border-radius: var(--r);
+  background: var(--accent); color: #07070f;
+  font-family: var(--fd); font-size: 21px; letter-spacing: 1.5px; cursor: pointer;
+  box-shadow: 0 0 24px rgba(232,255,60,.22);
+}
+.btn-cta:active { opacity: .88; }
+.row-link {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 14px 15px; margin: 0 13px 10px; cursor: pointer;
+}
+.row-link-t   { font-family: var(--fd); font-size: 16px; letter-spacing: 1px; color: var(--text); }
+.row-link-s   { font-size: 11px; color: var(--sub); margin-top: 2px; }
+.row-link-cta { font-family: var(--fm); font-size: 11px; color: var(--accent-ink); white-space: nowrap; }
+.list-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 15px; border-bottom: 1px solid var(--border2); cursor: pointer; font-size: 14px;
+}
+.list-row:last-child { border-bottom: none; }
+.sub-hdr { display: flex; align-items: center; gap: 12px; padding: 15px 13px 10px; border-bottom: 1px solid var(--border); }
+.sub-back {
+  width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; color: var(--sub);
+  cursor: pointer; font-size: 20px; flex: none;
+}
+.sub-title { font-family: var(--fd); font-size: 20px; letter-spacing: 2px; color: var(--accent-ink); }
+
 /* Segmented control (theme / text-size settings) */
 .seg { display: flex; gap: 6px; }
 .seg button {
@@ -929,18 +958,10 @@ a { text-decoration: none; }
     </div>
   </div>
 
-  <!-- Sync / Export / Import bar -->
-  <div class="sync-banner">
-    <div class="sync-banner-left">☁️ Data synced across all devices via Firebase</div>
-    <div class="sync-banner-right">
-      <button class="sync-btn sync-btn-exp" onclick="exportData()">⬇ Export</button>
-      <button class="sync-btn sync-btn-imp" onclick="document.getElementById('import-input').click()">⬆ Import</button>
-    </div>
-  </div>
   <input type="file" id="import-input" accept=".json" onchange="importData(event)">
 
-  <!-- ════ SCREEN: DASHBOARD ════ -->
-  <div class="screen active" id="s-dash">
+  <!-- ════ SCREEN: TODAY ════ -->
+  <div class="screen active" id="s-today">
     <div class="hero">
       <div class="hero-num" id="h-num">01</div>
       <div class="hero-name" id="h-name">Push Day 💪</div>
@@ -972,8 +993,101 @@ a { text-decoration: none; }
         </div>
       </div>
     </div>
+
+    <!-- PRIMARY CTA — lifted above the supporting cards so it's never buried -->
+    <div style="padding:12px 13px 2px;">
+      <button class="btn-cta" onclick="goWO()">START TODAY'S WORKOUT →</button>
+    </div>
+
     <div class="card">
-      <div class="card-hdr">⚙️ DISPLAY</div>
+      <div class="card-hdr">TODAY'S BRIEF</div>
+      <div id="d-brief"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">30-DAY PROGRESS</div>
+      <div id="prog-text" style="font-family:var(--fm);font-size:11px;color:var(--sub);margin-bottom:5px;"></div>
+      <div class="pb-wrap"><div class="pb-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">SMART RECOMMENDATIONS</div>
+      <div id="d-recs" style="font-size:12px;line-height:2;color:var(--sub);"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">WEEKLY VOLUME AUDIT</div>
+      <div id="d-vol" style="font-size:12px;line-height:2;color:var(--sub);"></div>
+    </div>
+    <!-- Compact daily entry points; the full screens live under YOU -->
+    <div id="gym-today"></div>
+    <div class="row-link" onclick="openSub('stake')">
+      <div><div class="row-link-t">💰 STAKE CHALLENGE</div><div class="row-link-s" id="stake-today-sub">Put money on your streak</div></div>
+      <span class="row-link-cta">Open ›</span>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN: WORKOUT ════ -->
+  <div class="screen" id="s-wo">
+    <div class="day-scr" id="day-scr"></div>
+    <div id="wo-body"></div>
+  </div>
+
+  <!-- ════ SCREEN: PROGRESS (sessions + PRs + body) ════ -->
+  <div class="screen" id="s-prog">
+    <div style="padding:15px 13px 4px;">
+      <div class="card-hdr" style="font-size:20px;letter-spacing:2px;margin-bottom:0;">PROGRESS</div>
+    </div>
+    <div style="padding:8px 13px 2px;">
+      <div class="seg" id="seg-prog">
+        <button data-v="sessions" onclick="progSeg('sessions')">Sessions</button>
+        <button data-v="prs" onclick="progSeg('prs')">PRs</button>
+        <button data-v="body" onclick="progSeg('body')">Body</button>
+      </div>
+    </div>
+    <div id="hist-body"></div>
+    <div id="pr-body" style="display:none;"></div>
+    <div id="body-body" style="display:none;">
+      <div class="card">
+        <div class="card-hdr">LOG TODAY</div>
+        <div class="w-row">
+          <input type="number" inputmode="decimal" id="wi" placeholder="e.g. 74.5" step="0.1" min="30" max="300">
+          <button class="btn-acc" onclick="logW()">LOG</button>
+        </div>
+        <div id="w-confirm" style="display:none;margin-top:10px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);">
+          <div style="font-size:13.5px;margin-bottom:10px;">Log <b style="color:var(--cyan);font-size:16px;" id="w-confirm-val"></b> for today?</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-acc" style="flex:1;border-radius:var(--r2);" onclick="confirmLogW()">✓ OK</button>
+            <button class="btn-outline" style="flex:1;" onclick="cancelLogW()">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">TREND</div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:7px;margin-bottom:11px;">
+          <svg id="wsvg" viewBox="0 0 340 150" preserveAspectRatio="none"></svg>
+        </div>
+        <ul id="wlog-list" style="list-style:none;"></ul>
+      </div>
+      <div class="card">
+        <div class="card-hdr">WEEKLY REMINDER</div>
+        <select class="rem-sel" id="rem-day" onchange="saveRem()">
+          <option value="1">Every Monday</option><option value="2">Every Tuesday</option>
+          <option value="3">Every Wednesday</option><option value="4">Every Thursday</option>
+          <option value="5">Every Friday</option><option value="6">Every Saturday</option>
+          <option value="0">Every Sunday</option>
+        </select>
+        <div id="rem-stat" style="margin-top:7px;font-family:var(--fm);font-size:10.5px;color:var(--green);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN: YOU (account · settings · challenges · data) ════ -->
+  <div class="screen" id="s-you">
+    <div style="padding:15px 13px 4px;">
+      <div class="card-hdr" style="font-size:20px;letter-spacing:2px;margin-bottom:0;">YOU</div>
+    </div>
+    <div id="account-body"></div>
+
+    <div class="sec-lbl" style="padding:6px 18px 4px;">DISPLAY</div>
+    <div class="card">
       <div class="sec-lbl" style="margin-top:0;">THEME</div>
       <div class="seg" id="seg-theme">
         <button data-v="auto" onclick="setTheme('auto')">Auto</button>
@@ -987,49 +1101,34 @@ a { text-decoration: none; }
         <button data-v="1.15" onclick="setFontScale(1.15)">Large</button>
       </div>
     </div>
-    <div class="card">
-      <div class="card-hdr">30-DAY PROGRESS</div>
-      <div id="prog-text" style="font-family:var(--fm);font-size:11px;color:var(--sub);margin-bottom:5px;"></div>
-      <div class="pb-wrap"><div class="pb-fill" id="prog-fill" style="width:0%"></div></div>
+
+    <div class="sec-lbl" style="padding:6px 18px 4px;">CHALLENGES</div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="list-row" onclick="openSub('lead')"><span>🏆 Leaderboard</span><span class="row-link-cta">›</span></div>
+      <div class="list-row" onclick="openSub('stake')"><span>💰 Stake Challenge</span><span class="row-link-cta" id="you-stake-status">›</span></div>
+      <div class="list-row" onclick="openSub('gym')"><span>📍 Gym Check-in</span><span class="row-link-cta" id="you-gym-status">›</span></div>
     </div>
-    <div class="card">
-      <div class="card-hdr">TODAY'S BRIEF</div>
-      <div id="d-brief"></div>
-      <button class="btn-acc" style="width:100%;margin-top:12px;border-radius:var(--r2);" onclick="goWO()">START TODAY'S WORKOUT →</button>
+
+    <div class="sec-lbl" style="padding:6px 18px 4px;">DATA &amp; SYNC</div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="list-row" onclick="exportData()"><span>⬇ Export data</span><span class="row-link-cta">›</span></div>
+      <div class="list-row" onclick="document.getElementById('import-input').click()"><span>⬆ Import data</span><span class="row-link-cta">›</span></div>
     </div>
-    <div class="card">
-      <div class="card-hdr">SMART RECOMMENDATIONS</div>
-      <div id="d-recs" style="font-size:12px;line-height:2;color:var(--sub);"></div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">WEEKLY VOLUME AUDIT</div>
-      <div id="d-vol" style="font-size:12px;line-height:2;color:var(--sub);"></div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">CLOUD ACCOUNT</div>
-      <div id="d-uid" style="font-family:var(--fm);font-size:10px;color:var(--sub);line-height:1.8;"></div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">📍 GYM CHECK-IN</div>
-      <div id="gym-body"></div>
-    </div>
+    <div id="d-uid" style="font-family:var(--fm);font-size:10px;color:var(--sub);line-height:1.8;padding:0 18px 18px;"></div>
   </div>
 
-  <!-- ════ SCREEN: WORKOUT ════ -->
-  <div class="screen" id="s-wo">
-    <div class="day-scr" id="day-scr"></div>
-    <div id="wo-body"></div>
+  <!-- ════ SUB-SCREENS (pushed from YOU) ════ -->
+  <div class="screen" id="s-sub-lead">
+    <div class="sub-hdr"><div class="sub-back" onclick="closeSub()">‹</div><div class="sub-title">LEADERBOARD</div></div>
+    <div id="leaderboard-body"></div>
   </div>
-
-  <!-- ════ SCREEN: HISTORY ════ -->
-  <div class="screen" id="s-hist">
-    <div style="padding:15px 13px 5px;display:flex;gap:8px;align-items:center;">
-      <div class="card-hdr" style="font-size:20px;letter-spacing:2px;margin-bottom:0;">HISTORY</div>
-      <button class="btn-sm" id="hist-tab-log" onclick="histTab('log')" style="border-color:var(--accent-ink);color:var(--accent-ink);">Sessions</button>
-      <button class="btn-sm" id="hist-tab-pr" onclick="histTab('pr')">PRs</button>
-    </div>
-    <div id="hist-body"></div>
-    <div id="pr-body" style="display:none;"></div>
+  <div class="screen" id="s-sub-stake">
+    <div class="sub-hdr"><div class="sub-back" onclick="closeSub()">‹</div><div class="sub-title">STAKE CHALLENGE</div></div>
+    <div id="stake-body"></div>
+  </div>
+  <div class="screen" id="s-sub-gym">
+    <div class="sub-hdr"><div class="sub-back" onclick="closeSub()">‹</div><div class="sub-title">GYM CHECK-IN</div></div>
+    <div class="card"><div id="gym-body"></div></div>
   </div>
 
   <!-- One-time display-name prompt (after Google sign-in) -->
@@ -1058,86 +1157,23 @@ a { text-decoration: none; }
     <div class="lu-dismiss">Tap anywhere to continue</div>
   </div>
 
-  <!-- ════ SCREEN: WEIGHT ════ -->
-  <div class="screen" id="s-wt">
-    <div style="padding:15px 13px 5px;">
-      <div class="card-hdr" style="font-size:20px;letter-spacing:2px;">BODYWEIGHT LOG</div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">LOG TODAY</div>
-      <div class="w-row">
-        <input type="number" inputmode="decimal" id="wi" placeholder="e.g. 74.5" step="0.1" min="30" max="300">
-        <button class="btn-acc" onclick="logW()">LOG</button>
-      </div>
-      <div id="w-confirm" style="display:none;margin-top:10px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);">
-        <div style="font-size:13.5px;margin-bottom:10px;">Log <b style="color:var(--cyan);font-size:16px;" id="w-confirm-val"></b> for today?</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-acc" style="flex:1;border-radius:var(--r2);" onclick="confirmLogW()">✓ OK</button>
-          <button class="btn-outline" style="flex:1;" onclick="cancelLogW()">Cancel</button>
-        </div>
-      </div>
-      <div style="margin-top:10px;">
-        <div class="sec-lbl" style="margin-bottom:0;">WEEKLY REMINDER</div>
-        <select class="rem-sel" id="rem-day" onchange="saveRem()">
-          <option value="1">Every Monday</option><option value="2">Every Tuesday</option>
-          <option value="3">Every Wednesday</option><option value="4">Every Thursday</option>
-          <option value="5">Every Friday</option><option value="6">Every Saturday</option>
-          <option value="0">Every Sunday</option>
-        </select>
-      </div>
-      <div id="rem-stat" style="margin-top:7px;font-family:var(--fm);font-size:10.5px;color:var(--green);"></div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">TREND</div>
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:7px;margin-bottom:11px;">
-        <svg id="wsvg" viewBox="0 0 340 150" preserveAspectRatio="none"></svg>
-      </div>
-      <ul id="wlog-list" style="list-style:none;"></ul>
-    </div>
-  </div>
-
-  <!-- ════ SCREEN: STAKE ════ -->
-  <div class="screen" id="s-stake">
-    <div style="padding:15px 13px 5px;">
-      <div class="card-hdr" style="font-size:20px;letter-spacing:2px;">STAKE VAULT</div>
-    </div>
-    <div id="stake-body"></div>
-  </div>
-
-  <!-- ════ SCREEN: RANK (account + leaderboard) ════ -->
-  <div class="screen" id="s-rank">
-    <div style="padding:15px 13px 5px;">
-      <div class="card-hdr" style="font-size:20px;letter-spacing:2px;">LEADERBOARD</div>
-    </div>
-    <div id="account-body"></div>
-    <div id="leaderboard-body"></div>
-  </div>
-
-  <!-- ════ BOTTOM NAV ════ -->
+  <!-- ════ BOTTOM NAV (4 tabs) ════ -->
   <nav id="nav">
-    <button class="nb on" id="nb-d"  onclick="sw('dash',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      Home
+    <button class="nb on" id="nb-today" onclick="sw('today',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      Today
     </button>
     <button class="nb" id="nb-wo" onclick="sw('wo',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M3 9v6M17.5 6.5v11M21 9v6M6.5 12h11"/></svg>
       Workout
     </button>
-    <button class="nb" id="nb-h" onclick="sw('hist',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      History
+    <button class="nb" id="nb-prog" onclick="sw('prog',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M7 14l3-3 3 2 4-6"/></svg>
+      Progress
     </button>
-    <button class="nb" id="nb-wt" onclick="sw('wt',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Weight
-    </button>
-    <button class="nb" id="nb-stake" onclick="sw('stake',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-      Stake
-    </button>
-    <button class="nb" id="nb-rank" onclick="sw('rank',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zM17 5h2a2 2 0 01-2 3M7 5H5a2 2 0 002 3"/></svg>
-      Rank
+    <button class="nb" id="nb-you" onclick="sw('you',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+      You
     </button>
   </nav>
 </div>
@@ -1634,7 +1670,10 @@ window._applyState      = (data) => { if (data) S = { ...S, ...data }; };
 // Leaderboard hooks used by the Firebase module:
 window._getDisplayName     = () => S.displayName || null;
 window._getLeaderboardStats = () => ({ level: getLevelFromXP(S.xp), xp: S.xp||0, streak: calcStreak() });
-window._refreshAccountUI    = () => { if (document.getElementById('s-rank')?.classList.contains('active')) rRank(); };
+window._refreshAccountUI    = () => {
+  if (document.getElementById('s-you')?.classList.contains('active')) rYou();
+  if (document.getElementById('s-sub-lead')?.classList.contains('active')) rRank();
+};
 window._bootUI          = () => {
   // Rebuild the schedule with the loaded rotation choice. Users with progress
   // from before this feature keep the original Push-first order.
@@ -1961,36 +2000,45 @@ function showLevelUp(lv) {
 function sw(id, btn) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
-  document.getElementById('s-'+id).classList.add('active');
-  if (btn) btn.classList.add('on');
-  const subs = { dash:'ADAPTIVE COACH', wo:'EXECUTE · FORGE · ADAPT', hist:'HISTORY & RECORDS', wt:'BODYWEIGHT LOG', stake:'STAKE VAULT', rank:'LEADERBOARD' };
+  const scr = document.getElementById('s-'+id);
+  if (scr) scr.classList.add('active');
+  // Sub-pages are opened without a nav button — keep YOU lit so the user knows where they are.
+  const navBtn = btn || document.getElementById(id.startsWith('sub-') ? 'nb-you' : 'nb-'+id);
+  if (navBtn) navBtn.classList.add('on');
+  if (scr) scr.scrollTop = 0;
+  const subs = { today:'ADAPTIVE COACH', wo:'EXECUTE · FORGE · ADAPT', prog:'PROGRESS & RECORDS',
+                 you:'ACCOUNT · SETTINGS', 'sub-lead':'LEADERBOARD', 'sub-stake':'STAKE CHALLENGE',
+                 'sub-gym':'GYM CHECK-IN', 'sub-dungeon':'THE DUNGEON' };
   document.getElementById('tb-sub').textContent = subs[id] || 'FITFORGE';
-  if (id==='dash') rDash();
-  if (id==='wo')   rWO();
-  if (id==='hist') { histTab('log'); }
-  if (id==='wt')   rWT();
-  if (id==='stake') rStake();
-  if (id==='rank') rRank();
+  if (id==='today') rDash();
+  if (id==='wo')    rWO();
+  if (id==='prog')  rProgress();
+  if (id==='you')   rYou();
+  if (id==='sub-lead')  rRank();
+  if (id==='sub-stake') rStake();
+  if (id==='sub-gym')   rGymCheckin(SCH[Math.min(S.today,30)-1] || SCH[0]);
 }
+
+// Sub-pages are pushed from YOU and keep the YOU tab lit while open.
+function openSub(name) { sw('sub-' + name); }
+function closeSub()    { sw('you', document.getElementById('nb-you')); }
 function goWO() { S.viewDay = S.today; sw('wo', document.getElementById('nb-wo')); }
 
-function histTab(tab) {
-  const logBtn = document.getElementById('hist-tab-log');
-  const prBtn  = document.getElementById('hist-tab-pr');
-  const logBody = document.getElementById('hist-body');
-  const prBody  = document.getElementById('pr-body');
-  if (tab === 'log') {
-    logBody.style.display = ''; prBody.style.display = 'none';
-    if (logBtn) { logBtn.style.borderColor='var(--accent)'; logBtn.style.color='var(--accent)'; }
-    if (prBtn)  { prBtn.style.borderColor=''; prBtn.style.color=''; }
-    rHist();
-  } else {
-    logBody.style.display = 'none'; prBody.style.display = '';
-    if (prBtn)  { prBtn.style.borderColor='var(--accent)'; prBtn.style.color='var(--accent)'; }
-    if (logBtn) { logBtn.style.borderColor=''; logBtn.style.color=''; }
-    rPRs();
-  }
+/* PROGRESS screen: one story — Sessions / PRs / Body (was two separate tabs) */
+let progSegCur = 'sessions';
+function progSeg(which) {
+  progSegCur = which;
+  const bodies = { sessions:'hist-body', prs:'pr-body', body:'body-body' };
+  Object.entries(bodies).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (k === which) ? '' : 'none';
+  });
+  markSeg('seg-prog', which);
+  if (which === 'sessions') rHist();
+  if (which === 'prs')      rPRs();
+  if (which === 'body')     rWT();
 }
+function rProgress() { progSeg(progSegCur); }
 
 /* ════════════════════════════════════════════════
    DASHBOARD
@@ -2037,8 +2085,15 @@ function rDash() {
   // Update XP UI
   updateXPUI();
 
-  rGymCheckin(sc);
-  refreshDisplaySettingsUI();
+  rGymToday(sc);
+  const stSub = document.getElementById('stake-today-sub');
+  if (stSub) {
+    const st = S.stake;
+    stSub.textContent = !st ? 'Put money on your streak'
+      : st.status === 'active'   ? `₹${st.amount} riding on a ${st.goal}-day streak`
+      : st.status === 'unlocked' ? `₹${st.amount} unlocked — tap to claim`
+      : 'Streak broke — stake stays put';
+  }
 }
 // Real-time streak: counts consecutive calendar days credited via bumpStreak().
 // Breaks (reads as 0) once a day is missed, regardless of in-app day progress.
@@ -2109,7 +2164,7 @@ async function setGymLocation() {
   } catch (err) {
     toast('⚠️ ' + err.message, 't-red');
   } finally {
-    rDash();
+    refreshGymUI();
   }
 }
 
@@ -2117,7 +2172,7 @@ function changeGymLocation() {
   if (!confirm('Re-set your gym location? Do this while standing at the gym.')) return;
   S.gym = null;
   save();
-  rDash();
+  refreshGymUI();
 }
 
 async function gymCheckIn() {
@@ -2139,7 +2194,47 @@ async function gymCheckIn() {
   } catch (err) {
     toast('⚠️ ' + err.message, 't-red');
   } finally {
-    rDash();
+    refreshGymUI();
+  }
+}
+
+/* Compact gym entry row on TODAY — the full screen lives under YOU → Gym Check-in.
+   Tapping checks in directly when that's the obvious next action, else opens the screen. */
+function rGymToday(sc) {
+  const el = document.getElementById('gym-today');
+  if (!el) return;
+  if (sc && sc.isRest) {
+    el.innerHTML = `<div class="row-link" onclick="openSub('gym')">
+      <div><div class="row-link-t">📍 GYM CHECK-IN</div><div class="row-link-s">Rest day — no check-in needed</div></div>
+      <span class="row-link-cta">View ›</span></div>`;
+    return;
+  }
+  const checkedIn = S.lastStreakDate === todayYMD();
+  let sub, cta, action;
+  if (!S.gym)        { sub = 'Set your gym so streaks only count there'; cta = 'Set up ›';    action = "openSub('gym')"; }
+  else if (checkedIn){ sub = "✓ Checked in today — streak secured";      cta = 'View ›';      action = "openSub('gym')"; }
+  else               { sub = 'Verify you\'re at the gym to earn today';  cta = 'Check in ›';  action = 'gymCheckIn()'; }
+  el.innerHTML = `<div class="row-link" onclick="${action}">
+    <div><div class="row-link-t">📍 GYM CHECK-IN</div><div class="row-link-s">${sub}</div></div>
+    <span class="row-link-cta">${cta}</span></div>`;
+}
+
+/* YOU — account, display settings, challenges, data. */
+function rYou() {
+  rAccount();
+  refreshDisplaySettingsUI();
+  updateUIDPanel();
+  const gs = document.getElementById('you-gym-status');
+  if (gs) gs.textContent = (S.gym ? 'On' : 'Off') + ' ›';
+  const ss = document.getElementById('you-stake-status');
+  if (ss) ss.textContent = (S.stake ? (S.stake.status === 'active' ? 'Active' : S.stake.status === 'unlocked' ? 'Unlocked' : 'Ended') : 'Not active') + ' ›';
+}
+
+/* Re-render whichever gym surface is on screen (Today row and/or the sub-page). */
+function refreshGymUI() {
+  rDash();
+  if (document.getElementById('s-sub-gym')?.classList.contains('active')) {
+    rGymCheckin(SCH[Math.min(S.today,30)-1] || SCH[0]);
   }
 }
 
