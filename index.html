@@ -1593,6 +1593,8 @@ let S = {
   stake: null,        // { amount, goal, vpa, name, status, startedAt, sawProgress }
   startOffset: null,  // 0-6 index into PROG chosen at first use (null = not chosen yet)
   displayName: null,  // leaderboard name, set once after Google sign-in (not the Google name)
+  dungeonUnlocked: false, // flips true once Day 30 is completed — gates the (not-yet-built)
+                          // post-program Dungeon mode. Silent: nothing in the UI reads it yet.
 };
 buildSCH();
 
@@ -1600,6 +1602,15 @@ buildSCH();
 function ymd(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function todayYMD() { return ymd(new Date()); }
 function yesterdayYMD() { const d = new Date(); d.setDate(d.getDate() - 1); return ymd(d); }
+
+// Silently flag the post-program Dungeon as unlocked once the FINAL scheduled day
+// (day 30, whatever its type under the chosen rotation) is completed. Nothing in the
+// UI reads this flag yet — the Dungeon mode itself is not built. This just records
+// readiness so it's already set for anyone who finishes before that ships.
+const FINAL_DAY = 30;
+function maybeUnlockDungeon(dn) {
+  if (dn === FINAL_DAY && !S.dungeonUnlocked) S.dungeonUnlocked = true;
+}
 
 // Call once per real completion (workout fully done, or rest day completed).
 // Increments the streak only the first time it's called on a given calendar day.
@@ -2440,6 +2451,7 @@ function buildWO(dn,sc) {
       if(!S.restDone) S.restDone = {};
       S.restDone[dn] = true;
       if(dn >= S.today) S.today = Math.min(dn + 1, 30);
+      maybeUnlockDungeon(dn);
       bumpStreak();
       // Award rest day XP
       awardXP(100);
@@ -2534,6 +2546,7 @@ function buildWO(dn,sc) {
 
     if(dn>=S.today) S.today=Math.min(dn+1,30);
     const nd=Object.keys(S.sets).filter(k=>k.startsWith(dn+'_')&&S.sets[k].done).length;
+    if(nd>=ts) maybeUnlockDungeon(dn); // only a fully-completed final day unlocks the dungeon
     // Streak credit no longer comes from here — it requires a location-verified
     // gym check-in (see gymCheckIn()) so the streak can't be faked from the couch.
     await save();
