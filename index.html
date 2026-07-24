@@ -717,6 +717,25 @@ a { text-decoration: none; }
   transition: opacity .3s;
 }
 #levelup-overlay.show { opacity: 1; pointer-events: auto; }
+
+/* ── First-use start-rotation picker ── */
+#start-overlay {
+  position: fixed; inset: 0; z-index: 10001;
+  background: rgba(7,7,15,.97);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px;
+}
+#start-overlay.show { display: flex; }
+.sp-title { font-family: var(--fd); font-size: 26px; letter-spacing: 3px; color: var(--accent); }
+.sp-sub { font-size: 12.5px; color: var(--sub2); text-align: center; max-width: 320px; line-height: 1.6; margin: 8px 0 18px; }
+.sp-btn {
+  width: 100%; max-width: 320px; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 13px 16px; margin-bottom: 9px; color: var(--text);
+  font-size: 14px; font-weight: 700; font-family: var(--fb); text-align: left;
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+}
+.sp-btn span { font-family: var(--fm); font-size: 9.5px; color: var(--sub); font-weight: 400; text-align: right; }
+.sp-btn:active { border-color: var(--accent); }
 .lu-stars { font-size: 40px; letter-spacing: 8px; animation: starSpin 1s ease; }
 @keyframes starSpin { from { transform: rotate(-20deg) scale(.5); opacity:0; } to { transform: rotate(0) scale(1); opacity:1; } }
 .lu-title {
@@ -867,6 +886,13 @@ a { text-decoration: none; }
     </div>
     <div id="hist-body"></div>
     <div id="pr-body" style="display:none;"></div>
+  </div>
+
+  <!-- First-use start-rotation picker -->
+  <div id="start-overlay">
+    <div class="sp-title">PICK YOUR DAY 1</div>
+    <p class="sp-sub">Which workout do you want to start with today? The rest of the rotation follows from here — and it locks in once chosen.</p>
+    <div id="sp-btns" style="width:100%;display:flex;flex-direction:column;align-items:center;"></div>
   </div>
 
   <!-- Level-up overlay -->
@@ -1320,10 +1346,18 @@ const CARDIO = [
   { name:"Boxing / Shadow", icon:"🥊", detail:"12 min · 3×4 min rounds, 1 min rest" },
 ];
 
-const SCH = [];
-for (let w = 1; w <= 4; w++) for (let d = 0; d < 7; d++) SCH.push({ week: w, ...PROG[d] });
-SCH.push({ week:4, ...PROG[0] });
-SCH.push({ week:4, ...PROG[1] });
+// The 30-day schedule is the 7-day PROG cycle rotated by S.startOffset —
+// chosen once at first use ("start with legs") and locked after, because all
+// logged sets are keyed by day number and remapping would corrupt history.
+let SCH = [];
+function buildSCH() {
+  const off = S.startOffset || 0;
+  SCH = [];
+  for (let w = 1; w <= 4; w++) for (let d = 0; d < 7; d++) SCH.push({ week: w, ...PROG[(d + off) % 7] });
+  SCH.push({ week:4, ...PROG[(0 + off) % 7] });
+  SCH.push({ week:4, ...PROG[(1 + off) % 7] });
+}
+// (initial build happens right after the state object below is declared)
 
 /* ════════════════════════════════════════════════
    STATE
@@ -1350,7 +1384,9 @@ let S = {
   lastStreakDate: null, // 'YYYY-MM-DD' (local) of the last day the streak was credited
   gym: null,          // { lat, lng, radius } — saved gym location for check-in verification
   stake: null,        // { amount, goal, vpa, name, status, startedAt, sawProgress }
+  startOffset: null,  // 0-6 index into PROG chosen at first use (null = not chosen yet)
 };
+buildSCH();
 
 // Local calendar date as 'YYYY-MM-DD' — used for the real-time streak, not S.today (program day)
 function ymd(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
@@ -1375,11 +1411,19 @@ window._saveToLocal     = () => { try { localStorage.setItem(LS_KEY, JSON.string
 window._loadFromLocal   = () => { const r = window._getLocalState(); if (r) S = { ...S, ...r }; };
 window._applyState      = (data) => { if (data) S = { ...S, ...data }; };
 window._bootUI          = () => {
+  // Rebuild the schedule with the loaded rotation choice. Users with progress
+  // from before this feature keep the original Push-first order.
+  if (S.startOffset == null) {
+    const hasProgress = Object.keys(S.sets||{}).length > 0 || Object.keys(S.restDone||{}).length > 0 || (S.xp||0) > 0 || S.today > 1;
+    if (hasProgress) S.startOffset = 0;
+  }
+  buildSCH();
   document.getElementById('loading-overlay').style.display = 'none';
   rDash();
   updateXPUI();
   checkReminder();
   updateUIDPanel();
+  if (S.startOffset == null) showStartPicker();
 };
 
 // Save: always write locally + push to cloud
@@ -1511,18 +1555,31 @@ function getStreakMultiplier() {
 function isOnFire() { return calcStreak() >= 3; }
 
 /* ── Boss Battle helpers ── */
-const BOSS_DAYS  = [7, 14, 21, 28]; // days that trigger a boss
+// One boss per week, on the LAST TRAINING DAY of that week — computed from the
+// schedule rather than fixed day numbers. (The old fixed list [7,14,21,28] all
+// landed on rest days, so bosses could never actually trigger; this also keeps
+// bosses alive under any start-rotation choice.)
 const BOSS_DEFS  = [
-  { name: 'THE IRON OGRE',     sub: '⚔️ Push Day — Amplified',   emoji: '👹' },
-  { name: 'THE SHADOW PULLER', sub: '⚔️ Pull Day — Amplified',   emoji: '🕷️' },
-  { name: 'THE LEG CRUSHER',   sub: '⚔️ Leg Day — Amplified',    emoji: '🦾' },
-  { name: 'THE FINAL BEAST',   sub: '⚔️ Upper Day — Amplified',  emoji: '💀' },
+  { name: 'THE IRON OGRE',     emoji: '👹' },
+  { name: 'THE SHADOW PULLER', emoji: '🕷️' },
+  { name: 'THE LEG CRUSHER',   emoji: '🦾' },
+  { name: 'THE FINAL BEAST',   emoji: '💀' },
 ];
 
-function isBossDay(dn) { return BOSS_DAYS.includes(dn); }
+function bossDayForWeek(w) { // w = 1..4 → day number of that week's boss
+  for (let d = w * 7; d >= (w - 1) * 7 + 1; d--) if (SCH[d-1] && !SCH[d-1].isRest) return d;
+  return null;
+}
+function isBossDay(dn) {
+  if (dn > 28) return false; // days 29-30 are bonus days, no boss
+  const sc = SCH[dn-1];
+  if (!sc || sc.isRest) return false;
+  return bossDayForWeek(sc.week) === dn;
+}
 function getBossDef(dn) {
-  const idx = BOSS_DAYS.indexOf(dn);
-  return idx >= 0 ? BOSS_DEFS[idx] : null;
+  if (!isBossDay(dn)) return null;
+  const def = BOSS_DEFS[SCH[dn-1].week - 1];
+  return { ...def, sub: `⚔️ ${SCH[dn-1].label} — Amplified` };
 }
 // Amplify exercises for boss battles: +1 set, repRange +2 both ends
 function bossifyExs(exs) {
@@ -1759,6 +1816,32 @@ function calcStreak(){
   if(!S.lastStreakDate) return 0;
   if(S.lastStreakDate===todayYMD()||S.lastStreakDate===yesterdayYMD()) return S.streakCount||0;
   return 0;
+}
+
+/* ════════════════════════════════════════════════
+   START-ROTATION PICKER — first use only.
+   Locked once chosen: set history is keyed by day
+   number, so remapping later would corrupt it.
+════════════════════════════════════════════════ */
+function showStartPicker() {
+  const wrap = document.getElementById('sp-btns');
+  wrap.innerHTML = '';
+  PROG.forEach((p, i) => {
+    if (p.isRest) return;
+    const b = mk('button', 'sp-btn');
+    b.innerHTML = `${p.label}<span>${(p.muscles || []).join(' · ')}</span>`;
+    b.onclick = () => chooseStart(i);
+    wrap.appendChild(b);
+  });
+  document.getElementById('start-overlay').classList.add('show');
+}
+async function chooseStart(off) {
+  S.startOffset = off;
+  buildSCH();
+  document.getElementById('start-overlay').classList.remove('show');
+  await save();
+  rDash();
+  toast(`💪 Day 1: ${PROG[off].label} — rotation locked in!`, 't-green');
 }
 
 /* ════════════════════════════════════════════════
@@ -2490,8 +2573,9 @@ function rPRs() {
   // Boss Battle history
   const bossCard = mk('div','card');
   bossCard.innerHTML = `<div class="card-hdr">BOSS BATTLE STATUS</div>`;
-  const bossRows = BOSS_DAYS.map((d, i) => {
-    const def = BOSS_DEFS[i];
+  const bossRows = [1, 2, 3, 4].map((w) => {
+    const d = bossDayForWeek(w);
+    const def = BOSS_DEFS[w - 1];
     const isThisWeek = S.boss?.weekNum === d;
     const status = isThisWeek ? (S.boss.defeated ? '🏆 DEFEATED' : S.boss.failed ? '☠️ FAILED' : S.boss.active ? '⚔️ ACTIVE' : '—') : (S.today > d ? '⏭️ PAST' : '🔒 LOCKED');
     const col = status.includes('DEFEATED') ? 'var(--green)' : status.includes('FAILED') ? 'var(--red)' : status.includes('ACTIVE') ? 'var(--orange)' : 'var(--sub)';
