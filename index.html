@@ -888,8 +888,15 @@ a { text-decoration: none; }
     <div class="card">
       <div class="card-hdr">LOG TODAY</div>
       <div class="w-row">
-        <input type="number" id="wi" placeholder="e.g. 74.5" step="0.1" min="30" max="300">
+        <input type="number" inputmode="decimal" id="wi" placeholder="e.g. 74.5" step="0.1" min="30" max="300">
         <button class="btn-acc" onclick="logW()">LOG</button>
+      </div>
+      <div id="w-confirm" style="display:none;margin-top:10px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);">
+        <div style="font-size:13.5px;margin-bottom:10px;">Log <b style="color:var(--cyan);font-size:16px;" id="w-confirm-val"></b> for today?</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-acc" style="flex:1;border-radius:var(--r2);" onclick="confirmLogW()">✓ OK</button>
+          <button class="btn-outline" style="flex:1;" onclick="cancelLogW()">Cancel</button>
+        </div>
       </div>
       <div style="margin-top:10px;">
         <div class="sec-lbl" style="margin-bottom:0;">WEEKLY REMINDER</div>
@@ -2500,13 +2507,24 @@ function rPRs() {
 /* ════════════════════════════════════════════════
    WEIGHT LOG
 ════════════════════════════════════════════════ */
-async function logW(){
+// Two-step logging: LOG shows an inline confirmation with the parsed value,
+// so a mistyped weight is caught before it lands in the chart.
+function logW(){
   const v=parseFloat(document.getElementById('wi').value);
   if(!v||v<20||v>300){toast('Enter a valid weight','t-red');return;}
+  document.getElementById('w-confirm-val').textContent=`${v} kg`;
+  document.getElementById('w-confirm').style.display='block';
+}
+async function confirmLogW(){
+  const v=parseFloat(document.getElementById('wi').value);
+  if(!v||v<20||v>300){cancelLogW();return;}
   S.wlog.push({date:new Date().toISOString(),kg:v});
   await save();
-  document.getElementById('wi').value='';rWT();toast('Weight logged & synced ✓','t-green');
+  document.getElementById('wi').value='';
+  cancelLogW();
+  rWT();toast(`✓ ${v} kg logged & synced`,'t-green');
 }
+function cancelLogW(){document.getElementById('w-confirm').style.display='none';}
 async function saveRem(){S.remDay=parseInt(document.getElementById('rem-day').value);await save();remStat();}
 function remStat(){const d=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];document.getElementById('rem-stat').textContent=`📅 Reminder set for every ${d[S.remDay]}`;}
 function rWT(){
