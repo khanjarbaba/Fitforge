@@ -1593,8 +1593,10 @@ let S = {
   stake: null,        // { amount, goal, vpa, name, status, startedAt, sawProgress }
   startOffset: null,  // 0-6 index into PROG chosen at first use (null = not chosen yet)
   displayName: null,  // leaderboard name, set once after Google sign-in (not the Google name)
-  dungeonUnlocked: false, // flips true once Day 30 is completed — gates the (not-yet-built)
-                          // post-program Dungeon mode. Silent: nothing in the UI reads it yet.
+  dungeonUnlocked: false, // flips true once Day 30 is completed — gates the post-program
+                          // Dungeon mode. Silent: no select-boss UI is built yet.
+  dungeon: null,          // Nemesis engine state: { activeBossId, run, status:{}, lastEvent }
+                          // lazily initialised by _dungeon(); see DUNGEON section.
 };
 buildSCH();
 
@@ -1641,6 +1643,9 @@ window._bootUI          = () => {
     if (hasProgress) S.startOffset = 0;
   }
   buildSCH();
+  // Settle any active boss against the real clock — a boss can win (deadline passed
+  // while short) even if the app was closed the whole time. No-op if no boss is active.
+  evalDungeon();
   document.getElementById('loading-overlay').style.display = 'none';
   rDash();
   updateXPUI();
@@ -2125,6 +2130,7 @@ async function gymCheckIn() {
     const radius = S.gym.radius || 120;
     if (dist <= radius) {
       bumpStreak();
+      logDungeonSession(); // one check-in feeds both the streak and any active boss (no-op if none)
       await save();
       toast(`✅ Checked in ${Math.round(dist)}m from your gym — streak day credited!`, 't-green');
     } else {
@@ -2168,6 +2174,220 @@ function rGymCheckin(sc) {
     document.getElementById('btn-gym-checkin').onclick = gymCheckIn;
   }
   document.getElementById('lnk-change-gym').onclick = (e) => { e.preventDefault(); changeGymLocation(); };
+}
+
+/* ════════════════════════════════════════════════
+   DUNGEON — "lighter Nemesis" boss engine (backend).
+
+   Unlocks after the 30-day program. Bosses are a fixed, ordered ladder
+   (progressive unlock: beat one to reach the next), but they behave like
+   nemeses: each is a TIMED challenge, and failing one doesn't just reset —
+   the boss WINS, its grudge rises, it comes back harder and taunts you by
+   name using your real shortfall. Losing is the point.
+
+   A "session" = one location-verified gym check-in (the same one that feeds
+   the streak). You must land `requiredSessions` of them before the deadline
+   (startedAt + windowDays). Deadline is real wall-clock: the boss can win
+   while the app is closed, settled by evalDungeon() on next boot.
+
+   This file is the ENGINE ONLY — no select-boss UI (that's coming from the
+   frontend design). Every function here is safe to call with no active boss
+   (it no-ops), so nothing is visible to users until the UI ships.
+
+   The per-boss `intensity`/`split` fields describe how the daily workout is
+   amplified; the workout renderer will consume them when the UI lands.
+════════════════════════════════════════════════ */
+const BOSSES = [
+  { id:'grendel',  name:'Grendel, the Fen-Stalker', emoji:'🪓', level:10, creature:'Brute of the Marsh',
+    requiredSessions:8,  windowDays:12, intensity:{ setsBonus:1, repShift:0 },
+    taunts:{
+      greet:"You reek of ambition, mortal. The fen swallows the ambitious whole.",
+      defeat:[
+        "You fell {shortfall} short. Grendel feeds — and remembers your scent.",
+        "Twice you've fled the marsh. Grendel grows fat on your excuses.",
+        "{grudge} times beaten. You are not prey anymore. You are a habit.",
+      ],
+      victory:"The marsh... goes quiet. You've earned the deeper dark, warrior." } },
+
+  { id:'ssythar',  name:'Ssythar, the Sable Basilisk', emoji:'🐍', level:20, creature:'Serpent of Stone',
+    requiredSessions:8,  windowDays:11, intensity:{ setsBonus:1, repShift:1 },
+    taunts:{
+      greet:"Meet my gaze if you dare. Most turn to stone long before the tenth dawn.",
+      defeat:[
+        "{shortfall} sessions unfinished. Ssythar's venom is patience — it always wins.",
+        "Frozen mid-stride again. Look away long enough and you become the statue.",
+        "{grudge} defeats. My garden of the weak has a plinth with your name.",
+      ],
+      victory:"Impossible... my gaze... shattered. Slither onward, then." } },
+
+  { id:'chimaros', name:'Chimaros, the Three-Headed', emoji:'🦁', level:30, creature:'Chimera of Three Hungers',
+    requiredSessions:9,  windowDays:12, intensity:{ setsBonus:1, repShift:2 },
+    taunts:{
+      greet:"Three heads, three appetites. You cannot feed us all on half-effort.",
+      defeat:[
+        "One head still hungers — you left {shortfall} undone. We hunt you next cycle.",
+        "Lion, goat, serpent — all three laughed as you faltered again.",
+        "{grudge} feasts you've served us. Come, the middle head is still peckish.",
+      ],
+      victory:"All three heads bow at once. You are no longer on the menu." } },
+
+  { id:'morrigan', name:'Morrígan, the Banshee', emoji:'👻', level:40, creature:'Wail of the Grave',
+    requiredSessions:9,  windowDays:11, intensity:{ setsBonus:2, repShift:2 },
+    taunts:{
+      greet:"I have already sung your defeat. Prove the wail wrong.",
+      defeat:[
+        "My wail was true. {shortfall} short — the grave-song fit you perfectly.",
+        "Each time you fail, my scream finds a sharper note. Sing along?",
+        "{grudge} funerals I've sung for you. You do so love an encore.",
+      ],
+      victory:"My scream... silenced. Go — before I find my voice again." } },
+
+  { id:'vharokk',  name:'Vharokk, the Kraken', emoji:'🦑', level:50, creature:'Warden of the Abyss',
+    requiredSessions:10, windowDays:12, intensity:{ setsBonus:2, repShift:3 },
+    taunts:{
+      greet:"The abyss counts your days. Surface too rarely and the depths keep you.",
+      defeat:[
+        "The tide took {shortfall} of your days. Vharokk drags you deeper each drowning.",
+        "You thrash, you sink. The deep does not applaud effort — only arrival.",
+        "{grudge} times the abyss has closed over you. It fits you like a grave.",
+      ],
+      victory:"The depths release their grip. Few ever surface, champion." } },
+
+  { id:'ignarok',  name:'Ignarok, the Elder Wyrm', emoji:'🐉', level:60, creature:'The Last Flame',
+    requiredSessions:10, windowDays:12, intensity:{ setsBonus:3, repShift:3 },
+    taunts:{
+      greet:"Elder flame has outlasted a thousand challengers. Burn brighter — or burn out.",
+      defeat:[
+        "Ash. {shortfall} short and you are ash. The Wyrm has eternity; you have excuses.",
+        "You bring kindling to a firestorm and wonder why you smoulder.",
+        "{grudge} times reduced to cinders. Even ash grows tired of you.",
+      ],
+      victory:"Ancient fire... yields. The bestiary is empty. There are no monsters left but you." } },
+];
+
+// Lazy-init the dungeon state (also migrates older saves that predate this feature).
+function _dungeon() {
+  if (!S.dungeon) S.dungeon = { activeBossId: null, run: null, status: {}, lastEvent: null };
+  if (!S.dungeon.status) S.dungeon.status = {};
+  return S.dungeon;
+}
+function bossById(id) { return BOSSES.find(b => b.id === id); }
+function bossRecord(id) {
+  const d = _dungeon();
+  if (!d.status[id]) d.status[id] = { defeated:false, grudge:0, attempts:0, defeatedAt:null };
+  return d.status[id];
+}
+function dungeonReady() { return !!S.dungeonUnlocked; }
+function allBossesDefeated() { return BOSSES.every(b => bossRecord(b.id).defeated); }
+
+// Progressive unlock: the next boss is the first in ladder order not yet defeated.
+function nextBossId() {
+  for (const b of BOSSES) if (!bossRecord(b.id).defeated) return b.id;
+  return null; // all defeated
+}
+
+// A boss's difficulty scaled by its grudge (how many times it has beaten you):
+// +1 required session per grudge, window tightened per grudge (floored so it stays
+// beatable), and extra sets every second grudge. This is the nemesis "levelling up".
+function bossEffective(id) {
+  const b = bossById(id), g = bossRecord(id).grudge || 0;
+  const requiredSessions = b.requiredSessions + g;
+  const windowDays = Math.max(requiredSessions + 2, b.windowDays - g);
+  const intensity = { setsBonus: b.intensity.setsBonus + Math.floor(g/2), repShift: b.intensity.repShift };
+  return { ...b, requiredSessions, windowDays, intensity, grudge:g };
+}
+
+function isBossSelectable(id) {
+  return dungeonReady() && !_dungeon().run && id === nextBossId();
+}
+
+// Fill {shortfall}/{grudge}/{name} in a taunt; pick the defeat line by grudge level.
+function bossTaunt(id, ctx = {}) {
+  const b = bossById(id); if (!b || !b.taunts) return '';
+  const fill = s => (s || '').replace(/{shortfall}/g, ctx.shortfall ?? '')
+                             .replace(/{grudge}/g, ctx.grudge ?? '')
+                             .replace(/{name}/g, b.name);
+  if (ctx.event === 'greet')   return fill(b.taunts.greet);
+  if (ctx.event === 'victory') return fill(b.taunts.victory);
+  if (ctx.event === 'defeat') {
+    const lines = b.taunts.defeat || [];
+    const idx = Math.min(Math.max((ctx.grudge || 1) - 1, 0), lines.length - 1);
+    return fill(lines[idx]);
+  }
+  return '';
+}
+
+// Commit to a boss — irreversible; starts the real-time clock. Returns the greet taunt.
+function startBoss(id) {
+  if (!isBossSelectable(id)) return { ok:false, reason:'locked' };
+  const eff = bossEffective(id);
+  const now = Date.now();
+  const d = _dungeon();
+  d.activeBossId = id;
+  d.run = { startedAt: now, deadline: now + eff.windowDays * 86400000,
+            requiredSessions: eff.requiredSessions, windowDays: eff.windowDays,
+            sessionsLogged: 0, sessionDates: [] };
+  bossRecord(id).attempts++;
+  return { ok:true, boss: eff, taunt: bossTaunt(id, { event:'greet' }) };
+}
+
+// Called by the gym check-in. One check-in = at most one session per calendar day.
+function logDungeonSession() {
+  const d = _dungeon();
+  if (!d.run) return { counted:false, reason:'no-active-boss' };
+  const today = todayYMD();
+  if (d.run.sessionDates.includes(today)) return { counted:false, reason:'already-today' };
+  if (Date.now() > d.run.deadline)        return { counted:false, reason:'expired' };
+  d.run.sessionsLogged++;
+  d.run.sessionDates.push(today);
+  return { counted:true, ...evalDungeon() };
+}
+
+// Settle the active boss against the clock. Returns an event; also stores it on
+// lastEvent so a win/loss that happened while the app was closed isn't lost — the
+// frontend reads lastEvent to show the popup, then clears it.
+function evalDungeon(nowMs) {
+  const d = _dungeon();
+  if (!d.run) return { event:'none' };
+  const now = nowMs || Date.now();
+  const id = d.activeBossId, run = d.run;
+
+  if (run.sessionsLogged >= run.requiredSessions) {
+    const rec = bossRecord(id);
+    rec.defeated = true; rec.defeatedAt = new Date().toISOString();
+    const ev = { event:'victory', bossId:id, hadGrudge:rec.grudge, name:bossById(id).name,
+                 taunt: bossTaunt(id, { event:'victory' }) };
+    d.run = null; d.activeBossId = null; d.lastEvent = ev;
+    return ev;
+  }
+  if (now > run.deadline) {
+    const rec = bossRecord(id);
+    rec.grudge = (rec.grudge || 0) + 1;
+    const shortfall = run.requiredSessions - run.sessionsLogged;
+    const ev = { event:'defeat', bossId:id, shortfall, grudge:rec.grudge, name:bossById(id).name,
+                 taunt: bossTaunt(id, { event:'defeat', shortfall, grudge:rec.grudge }) };
+    d.run = null; d.activeBossId = null; d.lastEvent = ev;
+    return ev;
+  }
+  return { event:'none' };
+}
+
+// Pace snapshot for the pressure UI: red flag when sessions left outpace days left.
+function dungeonPace() {
+  const d = _dungeon();
+  if (!d.run) return null;
+  const run = d.run;
+  const daysLeft = Math.max(0, Math.ceil((run.deadline - Date.now()) / 86400000));
+  const sessionsLeft = Math.max(0, run.requiredSessions - run.sessionsLogged);
+  return { sessionsLogged: run.sessionsLogged, requiredSessions: run.requiredSessions,
+           sessionsLeft, daysLeft, behind: sessionsLeft > daysLeft, deadline: run.deadline };
+}
+
+// Frontend calls this after showing a victory/defeat popup.
+function consumeDungeonEvent() {
+  const d = _dungeon();
+  const ev = d.lastEvent; d.lastEvent = null;
+  return ev;
 }
 
 /* ════════════════════════════════════════════════
