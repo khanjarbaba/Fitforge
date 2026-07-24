@@ -474,7 +474,10 @@ a { text-decoration: none; }
   padding: 11px 14px; margin: 6px 13px; cursor: pointer; font-size: 13px; color: var(--sub);
 }
 
+.ex-hdr { cursor: pointer; align-items: center; }
+.ex-block:not(.ex-open) .ex-hdr { border-bottom: none; }
 .ex-count { font-family: var(--fm); font-size: 12px; color: var(--accent-ink); flex: none; margin-left: 8px; }
+.ex-chev { color: var(--sub); font-size: 13px; flex: none; margin-left: 8px; width: 12px; text-align: center; }
 .ex-rec { font-family: var(--fm); font-size: 11px; color: var(--cyan); padding: 8px 14px 2px; line-height: 1.5; }
 .ex-coach-row { display: flex; align-items: center; gap: 12px; padding: 8px 14px 6px; }
 .ex-coach-toggle { font-family: var(--fm); font-size: 10.5px; color: var(--sub); cursor: pointer; }
@@ -701,12 +704,12 @@ a { text-decoration: none; }
 
 /* Cardio */
 .cardio-block {
-  background: linear-gradient(135deg, #1a0f22, #110c18);
-  border: 1px solid #32154a; border-radius: var(--r);
+  background: var(--card2);
+  border: 1px solid var(--border); border-radius: var(--r);
   margin: 0 13px 9px; padding: 13px; display: flex; align-items: center; gap: 11px;
 }
 .cardio-icon   { font-size: 26px; }
-.cardio-name   { font-weight: 700; font-size: 13.5px; }
+.cardio-name   { font-weight: 700; font-size: 13.5px; color: var(--text); }
 .cardio-detail { font-family: var(--fm); font-size: 10px; color: var(--sub); margin-top: 3px; }
 
 .save-btn {
@@ -2800,8 +2803,27 @@ function updateUIDPanel() {
 let woWarmOpen = false;
 let woCoachOpen = {};        // { 'dn_ei': true }
 let woRestId = null, woRestLeft = 0;
+let woOpenEx = null;         // 'dn_ei' of the one expanded exercise (accordion)
 
 function exsForDay(dn){ const sc=SCH[dn-1]; if(!sc||sc.isRest) return []; return isBossDay(dn)?bossifyExs(sc.exs):sc.exs; }
+
+// Display formatters — defensive against legacy fractional data (e.g. weights
+// stored as raw averages like 13.3333 before snapWeight). Never show long tails.
+function fmtKg(n){ if(n==null||isNaN(n)) return '—'; return String(Math.round(n*10)/10); }
+function fmtReps(n){ if(n==null||isNaN(n)) return '—'; return String(Math.round(n)); }
+
+// True once every set of an exercise is done.
+function exDone(dn,ei,ex){ for(let s=0;s<ex.sets;s++) if(!S.sets[`${dn}_${ei}_${s}`]?.done) return false; return true; }
+// First exercise that still has an unfinished set (or 0 if all done).
+function firstOpenIdx(dn){ const exs=exsForDay(dn); const i=exs.findIndex((ex,ei)=>!exDone(dn,ei,ex)); return i<0?0:i; }
+
+// Accordion: expand one exercise, collapse the rest, scroll it into view.
+function openExercise(dn,ei){
+  const key=`${dn}_${ei}`;
+  woOpenEx = (woOpenEx===key) ? null : key;   // tapping the open one collapses it
+  rWO();
+  if(woOpenEx){ const el=document.getElementById(`exblock_${woOpenEx}`); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+}
 
 // Suggested default for an untouched set: prior set → recommendation → range floor.
 function woDefault(dn,ei,s,ex,db,field){
@@ -2843,7 +2865,8 @@ function adjustSet(dn,ei,s,field,delta){
   if(!S.sets[k]) S.sets[k]={};
   const cur = S.sets[k][field]!=null ? S.sets[k][field] : (woDefault(dn,ei,s,ex,db,field)||0);
   let v=cur+delta; if(v<0)v=0;
-  if(field==='wt') v=Math.round(v*2)/2;
+  if(field==='wt') v=Math.round(v*2)/2;   // snap weight to 0.5kg
+  else v=Math.round(v);                    // reps are always whole numbers
   S.sets[k][field]=v;
   window._saveToLocal();
   refreshExBlock(dn,ei);
@@ -2985,7 +3008,10 @@ function buildWO(dn,sc) {
   sl.innerHTML=`<div class="sec-lbl">💪 ${bossDay?'⚔️ BOSS BATTLE — ':''}MAIN WORKOUT — ${sc.type} · REST 60–90 SEC</div>`;
   body.appendChild(sl);
 
+  // Accordion default: open the current (first-unfinished) exercise for this day.
+  if(!woOpenEx || parseInt(woOpenEx.split('_')[0])!==dn) woOpenEx = `${dn}_${firstOpenIdx(dn)}`;
   exsToShow.forEach((ex,ei)=>body.appendChild(mkEx(dn,ei,ex,bossDay)));
+  renderRestBar(); // restore the rest-timer bar if a countdown is running across this rebuild
 
   const ci=(dn-1)%CARDIO.length,c=CARDIO[ci];
   const cw=mk('div');cw.innerHTML=`<div style="padding:2px 13px 4px;"><div class="sec-lbl">🏃 POST-WORKOUT CARDIO</div></div><div class="cardio-block"><div class="cardio-icon">${c.icon}</div><div><div class="cardio-name">${c.name}</div><div class="cardio-detail">${c.detail}</div></div></div>`;body.appendChild(cw);
@@ -3052,15 +3078,17 @@ function mkEx(dn,ei,ex,bossDay=false){
   const rec=recommendWeight(ex.name,ex.rng);
   const prg=S.prg[ex.name];
   const [rMin,rMax]=ex.rng;
-  const block=mk('div','ex-block fade-up'); block.id=`exblock_${dn}_${ei}`;
+  const isOpen = woOpenEx===`${dn}_${ei}`;
+  const block=mk('div','ex-block fade-up'+(isOpen?' ex-open':'')); block.id=`exblock_${dn}_${ei}`;
   let dc=0; for(let s=0;s<ex.sets;s++) if(S.sets[`${dn}_${ei}_${s}`]?.done) dc++;
   if(dc===ex.sets) block.classList.add('ex-complete');
   else if(dc>0) block.classList.add('ex-partial');
 
-  // Header — name, muscle, done/total
-  const hdr=mk('div','ex-hdr');
-  hdr.innerHTML=`<div style="flex:1;min-width:0;"><div class="ex-title">${ex.name}</div><div class="ex-muscle">${db.muscle}${db.note?' · '+db.note:''}</div></div><div class="ex-count" id="ico_${dn}_${ei}">${dc}/${ex.sets}${dc===ex.sets?' ✅':''}</div>`;
+  // Header — tappable to expand/collapse (accordion). Collapsed shows only this row.
+  const hdr=mk('div','ex-hdr'); hdr.onclick=()=>openExercise(dn,ei);
+  hdr.innerHTML=`<div style="flex:1;min-width:0;"><div class="ex-title">${ex.name}</div><div class="ex-muscle">${db.muscle}${db.note?' · '+db.note:''}</div></div><div class="ex-count" id="ico_${dn}_${ei}">${dc}/${ex.sets}${dc===ex.sets?' ✅':''}</div><span class="ex-chev">${isOpen?'▾':'▸'}</span>`;
   block.appendChild(hdr);
+  if(!isOpen) return block; // collapsed — keep the list compact
 
   // One-line recommendation (kept visible — it's short and drives the set)
   let recLine='';
@@ -3068,7 +3096,7 @@ function mkEx(dn,ei,ex,bossDay=false){
   else if(rec){
     const rv=rec.type==='start'?`${rec.suggest[0]}–${rec.suggest[1]} kg`:`${rec.suggest} kg`;
     const icon=rec.type==='increase'?'▲':rec.type==='decrease'?'▼':'→';
-    recLine=`${icon} ${rv} · ${rMin}–${rMax} reps${rec.last?` · last ${rec.last}kg`:''}`;
+    recLine=`${icon} ${rv} · ${rMin}–${rMax} reps${rec.last?` · last ${fmtKg(rec.last)}kg`:''}`;
   } else recLine=`${db.sug?db.sug[0]+'–'+db.sug[1]+' kg':''} · ${rMin}–${rMax} reps`;
   const recEl=mk('div','ex-rec'); recEl.textContent='💡 '+recLine; block.appendChild(recEl);
 
@@ -3116,7 +3144,7 @@ function mkEx(dn,ei,ex,bossDay=false){
   const prBanner = mk('div','pr-banner'+(prevPR?'':'')); prBanner.id=`pr_${dn}_${ei}`;
   if (prevPR) {
     prBanner.classList.add('show');
-    prBanner.textContent = `🏆 Current PR: ${prevPR.wt}kg × ${prevPR.reps} reps`;
+    prBanner.textContent = `🏆 Current PR: ${fmtKg(prevPR.wt)}kg × ${fmtReps(prevPR.reps)} reps`;
   }
   block.appendChild(prBanner);
 
@@ -3140,12 +3168,12 @@ function gSetRow(dn,ei,s,ex,db,bossDay,activeIdx){
   if(isActive){
     const kgCell = db.bw
       ? `<span class="gset-bw">BW</span>`
-      : `<span class="gstep"><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'wt',${-inc})">−</button><span class="gstep-v">${wt} kg</span><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'wt',${inc})">+</button></span>`;
-    const repCell = `<span class="gstep"><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'reps',-1)">−</button><span class="gstep-v reps ${repClass}">${reps}</span><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'reps',1)">+</button></span>`;
+      : `<span class="gstep"><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'wt',${-inc})">−</button><span class="gstep-v">${fmtKg(wt)} kg</span><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'wt',${inc})">+</button></span>`;
+    const repCell = `<span class="gstep"><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'reps',-1)">−</button><span class="gstep-v reps ${repClass}">${fmtReps(reps)}</span><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'reps',1)">+</button></span>`;
     vals=`${kgCell}<span class="gset-x">×</span>${repCell}`;
   } else {
-    const kgTxt = db.bw ? 'BW' : (wt!=null? wt+' kg':'—');
-    vals=`<span class="gset-plain">${kgTxt}</span><span class="gset-x">×</span><span class="gset-plain ${sd.done?repClass:''}">${reps!=null?reps:'—'}</span>`;
+    const kgTxt = db.bw ? 'BW' : (wt!=null? fmtKg(wt)+' kg':'—');
+    vals=`<span class="gset-plain">${kgTxt}</span><span class="gset-x">×</span><span class="gset-plain ${sd.done?repClass:''}">${reps!=null?fmtReps(reps):'—'}</span>`;
   }
   const f = sd.done ? setFeedback(reps,rMin,rMax) : null;
   const check=`<span class="gset-check${sd.done?' on':''}${isActive&&!sd.done?' ready':''}" onclick="toggleSet(${dn},${ei},${s})">${sd.done?'✓':f?'':''}</span>`;
@@ -3202,14 +3230,24 @@ function toggleSet(dn,ei,s){
   if(S.sets[k].done && reps>0){
     const {xp, isPR} = calcSetXP(ex.name, wt, reps, rMin, rMax, dn, bossDay);
     awardXP(xp);
-    if(isPR){ const rec=S.prRecs[ex.name]; toast(`🏆 NEW PR on ${ex.name}! ${rec.wt}kg × ${rec.reps}`,'t-green'); }
+    if(isPR){ const rec=S.prRecs[ex.name]; toast(`🏆 NEW PR on ${ex.name}! ${fmtKg(rec.wt)}kg × ${fmtReps(rec.reps)}`,'t-green'); }
     else    { toast(`✓ Set logged · +${xp} XP · resting 1:15`,''); }
     startRest(75);
   }
 
   window._saveToLocal();
   window._saveToCloud();
-  refreshExBlock(dn,ei);
+
+  // If this set finished the exercise, advance the accordion to the next
+  // unfinished one; otherwise just re-render this block (keeps focus + scroll).
+  if(S.sets[k].done && exDone(dn,ei,ex)){
+    const exs=exsForDay(dn);
+    const next=exs.findIndex((e2,i)=> i!==ei && !exDone(dn,i,e2));
+    if(next>=0){ woOpenEx=`${dn}_${next}`; rWO(); const el=document.getElementById(`exblock_${woOpenEx}`); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+    else refreshExBlock(dn,ei);
+  } else {
+    refreshExBlock(dn,ei);
+  }
   updateSessionHeader(dn);
   updateBossHP(dn);
   updateXPUI();
@@ -3240,7 +3278,7 @@ function rHist(){
       const s=mk('div','hist-session');
       const vol=sets.reduce((a,h)=>(h.wt&&h.reps?a+(h.wt*h.reps):a),0);
       s.innerHTML=`<div class="hist-sess-hdr"><span class="hist-sess-date">📅 Day ${dn} — W${sc?.week||'?'} · ${sc?.label||''}</span><span class="hist-vol">${vol?Math.round(vol)+'kg vol':''}</span></div>`;
-      sets.forEach(h=>{const r=mk('div','hist-set-row');const[mn,mx]=(sc?.exs?.[h.ei]?.rng)||[8,12];const f=setFeedback(h.reps||0,mn,mx);r.innerHTML=`<span class="hist-set-label">Set ${h.si+1}</span><span class="hist-set-val">${h.wt?h.wt+'kg':'BW'} × ${h.reps||'?'} reps</span><span style="font-size:14px;">${f?.emoji||''}</span>`;s.appendChild(r);});
+      sets.forEach(h=>{const r=mk('div','hist-set-row');const[mn,mx]=(sc?.exs?.[h.ei]?.rng)||[8,12];const f=setFeedback(h.reps||0,mn,mx);r.innerHTML=`<span class="hist-set-label">Set ${h.si+1}</span><span class="hist-set-val">${h.wt?fmtKg(h.wt)+'kg':'BW'} × ${h.reps!=null?fmtReps(h.reps):'?'} reps</span><span style="font-size:14px;">${f?.emoji||''}</span>`;s.appendChild(r);});
       bdy.appendChild(s);
     });
     if(prg?.lastAction){const pa=mk('div');pa.innerHTML=`<div style="background:rgba(176,108,255,.07);border:1px solid rgba(176,108,255,.2);border-radius:var(--r2);padding:7px 10px;font-size:11.5px;color:var(--purple);font-weight:600;margin-top:8px;">📈 ${prg.lastAction}</div>`;bdy.appendChild(pa);}
@@ -3303,7 +3341,7 @@ function rPRs() {
       const row = mk('div','pr-row');
       row.innerHTML = `
         <span class="pr-ex">${exName}</span>
-        <span class="pr-val">${pr.wt}kg × ${pr.reps} reps</span>
+        <span class="pr-val">${fmtKg(pr.wt)}kg × ${fmtReps(pr.reps)} reps</span>
         <span class="pr-date">Day ${pr.dayNum}<br>${ds}</span>`;
       table.appendChild(row);
     });
