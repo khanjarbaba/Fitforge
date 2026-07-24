@@ -445,6 +445,71 @@ a { text-decoration: none; }
 }
 .sub-title { font-family: var(--fd); font-size: 20px; letter-spacing: 2px; color: var(--accent-ink); }
 
+/* ── Guided session: sticky header, rest bar, steppers ── */
+.wo-sess {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+  padding: 10px 14px 11px; margin-bottom: 4px;
+}
+.wo-sess-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.wo-sess-count { font-family: var(--fm); font-size: 11px; letter-spacing: 1px; color: var(--sub); }
+.wo-finish {
+  font-family: var(--fm); font-size: 11px; padding: 6px 15px; border-radius: 20px;
+  border: 1px solid var(--accent-ink); background: transparent; color: var(--accent-ink); cursor: pointer;
+}
+.wo-sess-bar-wrap { height: 6px; border-radius: 4px; background: var(--border); overflow: hidden; }
+.wo-sess-bar { height: 100%; background: var(--accent); transition: width .3s; }
+.wo-rest-bar {
+  position: sticky; top: 60px; z-index: 19;
+  align-items: center; justify-content: space-between;
+  margin: 0 13px 8px; padding: 10px 14px; border-radius: 10px;
+  background: rgba(60,245,255,.08); border: 1px solid rgba(60,245,255,.3);
+  font-family: var(--fm); font-size: 12px; color: var(--cyan);
+}
+.wo-rest-skip { font-size: 11px; color: var(--sub); cursor: pointer; }
+
+.wo-warm-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 11px 14px; margin: 6px 13px; cursor: pointer; font-size: 13px; color: var(--sub);
+}
+
+.ex-count { font-family: var(--fm); font-size: 12px; color: var(--accent-ink); flex: none; margin-left: 8px; }
+.ex-rec { font-family: var(--fm); font-size: 11px; color: var(--cyan); padding: 8px 14px 2px; line-height: 1.5; }
+.ex-coach-row { display: flex; align-items: center; gap: 12px; padding: 8px 14px 6px; }
+.ex-coach-toggle { font-family: var(--fm); font-size: 10.5px; color: var(--sub); cursor: pointer; }
+.ex-tut { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #fff; background: #ff0000; padding: 5px 10px; border-radius: 6px; text-decoration: none; }
+.ex-coach-body { font-size: 12px; color: var(--sub2); line-height: 1.55; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin: 2px 14px 8px; }
+.ex-coach-body b { color: var(--purple); }
+
+.gset-list { padding: 4px 0 6px; }
+.gset-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-top: 1px solid var(--border2);
+}
+.gset-row.gset-done { opacity: .55; }
+.gset-row.gset-active { background: rgba(232,255,60,.04); }
+.gset-label { font-family: var(--fm); font-size: 11px; color: var(--sub); width: 42px; flex: none; }
+.gset-vals { flex: 1; display: flex; align-items: center; gap: 8px; }
+.gset-x { color: var(--sub); }
+.gset-plain { font-family: var(--fm); font-size: 13px; color: var(--text); }
+.gset-bw { font-family: var(--fm); font-size: 13px; color: var(--sub2); }
+.gstep { display: flex; align-items: center; gap: 2px; background: var(--card2); border: 1px solid var(--accent-ink); border-radius: 7px; padding: 3px; }
+.gstep-b { width: 24px; height: 30px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg3); color: var(--accent-ink); font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex: none; }
+.gstep-b:active { background: var(--accent); color: #000; }
+.gstep-v { min-width: 46px; text-align: center; font-family: var(--fm); font-size: 13px; color: var(--text); }
+.gstep-v.reps { min-width: 24px; }
+.gstep-v.gv-up { color: var(--accent-ink); } .gstep-v.gv-ok { color: var(--green); } .gstep-v.gv-dn { color: var(--orange); }
+.gset-plain.gv-up { color: var(--accent-ink); } .gset-plain.gv-ok { color: var(--green); } .gset-plain.gv-dn { color: var(--orange); }
+.gset-fb { font-size: 13px; }
+.gset-check {
+  width: 34px; height: 34px; border-radius: 8px; flex: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px;
+  border: 1px solid var(--border); color: var(--sub);
+}
+.gset-check.ready { border-color: var(--accent-ink); color: var(--accent-ink); }
+.gset-check.on { background: var(--green); color: #07070f; border-color: var(--green); }
+
 /* Segmented control (theme / text-size settings) */
 .seg { display: flex; gap: 6px; }
 .seg button {
@@ -1998,6 +2063,7 @@ function showLevelUp(lv) {
    ROUTING
 ════════════════════════════════════════════════ */
 function sw(id, btn) {
+  if (typeof stopRest === 'function') stopRest(); // leaving any screen ends the rest timer
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
   const scr = document.getElementById('s-'+id);
@@ -2726,6 +2792,86 @@ function updateUIDPanel() {
 /* ════════════════════════════════════════════════
    WORKOUT SCREEN
 ════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════
+   GUIDED SESSION — sticky progress header, rest timer,
+   ± steppers, active-set focus, collapsed coaching.
+   (Transient UI state — not persisted.)
+════════════════════════════════════════════════ */
+let woWarmOpen = false;
+let woCoachOpen = {};        // { 'dn_ei': true }
+let woRestId = null, woRestLeft = 0;
+
+function exsForDay(dn){ const sc=SCH[dn-1]; if(!sc||sc.isRest) return []; return isBossDay(dn)?bossifyExs(sc.exs):sc.exs; }
+
+// Suggested default for an untouched set: prior set → recommendation → range floor.
+function woDefault(dn,ei,s,ex,db,field){
+  const k=`${dn}_${ei}_${s}`;
+  if(S.sets[k]?.[field]!=null) return S.sets[k][field];
+  if(s>0 && S.sets[`${dn}_${ei}_${s-1}`]?.[field]!=null) return S.sets[`${dn}_${ei}_${s-1}`][field];
+  if(field==='reps') return ex.rng[0];
+  if(db.bw) return null;
+  const rec=recommendWeight(ex.name,ex.rng);
+  if(rec) return rec.type==='start' ? rec.suggest[0] : (typeof rec.suggest==='number'?rec.suggest:rec.suggest[0]);
+  return db.sug?db.sug[0]:0;
+}
+
+// ── Rest timer ──
+function stopRest(){ if(woRestId){clearInterval(woRestId);woRestId=null;} woRestLeft=0; renderRestBar(); }
+function startRest(sec){ stopRest(); woRestLeft=sec; renderRestBar(); woRestId=setInterval(()=>{ woRestLeft--; if(woRestLeft<=0) stopRest(); else renderRestBar(); },1000); }
+function skipRest(){ stopRest(); }
+function renderRestBar(){
+  const el=document.getElementById('wo-rest-bar'); if(!el) return;
+  if(woRestLeft>0){ const m=Math.floor(woRestLeft/60),s=woRestLeft%60;
+    el.style.display='flex';
+    el.innerHTML=`<span>⏱ REST · ${m}:${String(s).padStart(2,'0')}</span><span class="wo-rest-skip" onclick="skipRest()">Skip ›</span>`;
+  } else { el.style.display='none'; el.innerHTML=''; }
+}
+
+// ── Collapsible warm-up + per-exercise coaching ──
+function toggleWarm(){
+  woWarmOpen=!woWarmOpen;
+  const el=document.getElementById('wo-warm-body'), ch=document.getElementById('wo-warm-chev');
+  if(el) el.style.display=woWarmOpen?'block':'none';
+  if(ch) ch.textContent=woWarmOpen?'▾':'▸';
+}
+function toggleCoach(dn,ei){ const key=dn+'_'+ei; woCoachOpen[key]=!woCoachOpen[key]; refreshExBlock(dn,ei); }
+
+// ── Steppers ──
+function adjustSet(dn,ei,s,field,delta){
+  const ex=exsForDay(dn)[ei]; if(!ex) return;
+  const db=EDB[ex.name]||{}; const k=`${dn}_${ei}_${s}`;
+  if(!S.sets[k]) S.sets[k]={};
+  const cur = S.sets[k][field]!=null ? S.sets[k][field] : (woDefault(dn,ei,s,ex,db,field)||0);
+  let v=cur+delta; if(v<0)v=0;
+  if(field==='wt') v=Math.round(v*2)/2;
+  S.sets[k][field]=v;
+  window._saveToLocal();
+  refreshExBlock(dn,ei);
+}
+
+// ── Session header + boss HP updates (no full re-render) ──
+function updateSessionHeader(dn){
+  const ts=exsForDay(dn).reduce((a,e)=>a+e.sets,0);
+  const ds=Object.keys(S.sets).filter(k=>k.startsWith(dn+'_')&&S.sets[k].done).length;
+  const c=document.getElementById('wo-sess-count'); if(c) c.innerHTML=`<b style="color:var(--accent-ink)">${ds}</b> / ${ts} SETS DONE`;
+  const bar=document.getElementById('wo-sess-bar'); if(bar) bar.style.width=(ts?Math.round(ds/ts*100):0)+'%';
+  const fin=document.getElementById('wo-finish-btn'); if(fin) fin.textContent = ds>=ts ? '✓ FINISH & SAVE' : 'FINISH';
+}
+function updateBossHP(dn){
+  if(!isBossDay(dn)) return;
+  const hp=calcBossHP(dn, exsForDay(dn));
+  const fill=document.getElementById('boss-hp-fill'); if(fill&&hp.total>0) fill.style.width=Math.round((hp.left/hp.total)*100)+'%';
+  const lbl=document.querySelector('.boss-hp-label span:last-child'); if(lbl) lbl.textContent=`${hp.left} / ${hp.total} sets remaining`;
+  if(S.boss) S.boss.hpLeft=hp.left;
+}
+
+// Re-render a single exercise block in place (safe: no text inputs to lose focus).
+function refreshExBlock(dn,ei){
+  const ex=exsForDay(dn)[ei]; if(!ex) return;
+  const old=document.getElementById(`exblock_${dn}_${ei}`);
+  if(old) old.replaceWith(mkEx(dn,ei,ex,isBossDay(dn)));
+}
+
 function rWO() {
   const vd=S.viewDay||S.today; S.viewDay=vd;
   const sc=SCH[vd-1]||SCH[0];
@@ -2821,9 +2967,22 @@ function buildWO(dn,sc) {
     body.appendChild(bossCard);
   }
 
+  // ── Sticky session header: sets-done + progress + finish ──
+  const ts=exsToShow.reduce((a,e)=>a+e.sets,0);
+  const ds=Object.keys(S.sets).filter(k=>k.startsWith(dn+'_')&&S.sets[k].done).length;
+  const sh=mk('div','wo-sess');
+  sh.innerHTML=`
+    <div class="wo-sess-top">
+      <div class="wo-sess-count" id="wo-sess-count"><b style="color:var(--accent-ink)">${ds}</b> / ${ts} SETS DONE</div>
+      <button class="wo-finish" id="wo-finish-btn" onclick="finishWorkout(${dn})">${ds>=ts?'✓ FINISH & SAVE':'FINISH'}</button>
+    </div>
+    <div class="wo-sess-bar-wrap"><div class="wo-sess-bar" id="wo-sess-bar" style="width:${ts?Math.round(ds/ts*100):0}%"></div></div>`;
+  body.appendChild(sh);
+  const rb=mk('div','wo-rest-bar'); rb.id='wo-rest-bar'; rb.style.display='none'; body.appendChild(rb);
+
   body.appendChild(mkWU(sc.wu));
   const sl=mk('div');sl.style.cssText='padding:2px 13px 5px;';
-  sl.innerHTML=`<div class="sec-lbl">💪 ${bossDay?'⚔️ BOSS BATTLE — ':''}MAIN WORKOUT — ${sc.type} · REST 60–90 SEC BETWEEN SETS</div>`;
+  sl.innerHTML=`<div class="sec-lbl">💪 ${bossDay?'⚔️ BOSS BATTLE — ':''}MAIN WORKOUT — ${sc.type} · REST 60–90 SEC</div>`;
   body.appendChild(sl);
 
   exsToShow.forEach((ex,ei)=>body.appendChild(mkEx(dn,ei,ex,bossDay)));
@@ -2831,56 +2990,60 @@ function buildWO(dn,sc) {
   const ci=(dn-1)%CARDIO.length,c=CARDIO[ci];
   const cw=mk('div');cw.innerHTML=`<div style="padding:2px 13px 4px;"><div class="sec-lbl">🏃 POST-WORKOUT CARDIO</div></div><div class="cardio-block"><div class="cardio-icon">${c.icon}</div><div><div class="cardio-name">${c.name}</div><div class="cardio-detail">${c.detail}</div></div></div>`;body.appendChild(cw);
 
+  const fbtn=mk('button','save-btn'+(ds>=ts?' btn-complete':''));
+  fbtn.textContent=ds>=ts?'✓ FINISH & SAVE WORKOUT':'SAVE & SYNC TO CLOUD ☁️';
+  fbtn.onclick=()=>finishWorkout(dn);
+  body.appendChild(fbtn);
+}
+
+// Extracted from the old save button so both the sticky FINISH and the bottom
+// button share one path. Preserves all prior logic: per-exercise progression,
+// boss evaluation, completion bonus, day advance, dungeon unlock.
+async function finishWorkout(dn){
+  const sc=SCH[dn-1]; if(!sc||sc.isRest) return;
+  const bossDay=isBossDay(dn);
+  const exsToShow=exsForDay(dn);
   const ts=exsToShow.reduce((a,e)=>a+e.sets,0);
-  const ds=Object.keys(S.sets).filter(k=>k.startsWith(dn+'_')&&S.sets[k].done).length;
-  const ad=ds>=ts;
-  const sbtn=mk('button','save-btn'+(ad?' btn-complete':''));
-  sbtn.textContent=ad?'✓ WORKOUT COMPLETE':'SAVE & SYNC TO CLOUD ☁️';
-  sbtn.onclick=async()=>{
-    sbtn.textContent='⏳ Saving…'; sbtn.disabled=true;
-    for(const[ei,ex] of exsToShow.entries()) await evalAndSave(ex.name,dn,ei,ex.sets,ex.rng);
+  stopRest();
+  toast('⏳ Saving…','');
 
-    // Boss battle evaluation
-    if (bossDay && S.boss?.weekNum === dn && !S.boss.defeated && !S.boss.failed) {
-      const hp = calcBossHP(dn, exsToShow);
-      if (hp.done >= hp.total) {
-        S.boss.defeated = true; S.boss.active = false;
-        awardXP(200); // boss defeat bonus
-        toast('⚔️ BOSS DEFEATED! +200 XP BONUS! 🏆','t-green');
-      } else if (hp.done < hp.total * 0.5) {
-        S.boss.failed = true; S.boss.active = false;
-        S.xp = Math.max(0, S.xp - 50); // -50 XP penalty
-        toast('☠️ Boss escaped… −50 XP. Come back stronger.','t-red');
-      }
+  for(const[ei,ex] of exsToShow.entries()) await evalAndSave(ex.name,dn,ei,ex.sets,ex.rng);
+
+  if (bossDay && S.boss?.weekNum === dn && !S.boss.defeated && !S.boss.failed) {
+    const hp = calcBossHP(dn, exsToShow);
+    if (hp.done >= hp.total) {
+      S.boss.defeated = true; S.boss.active = false;
+      awardXP(200);
+      toast('⚔️ BOSS DEFEATED! +200 XP BONUS! 🏆','t-green');
+    } else if (hp.done < hp.total * 0.5) {
+      S.boss.failed = true; S.boss.active = false;
+      S.xp = Math.max(0, S.xp - 50);
+      toast('☠️ Boss escaped… −50 XP. Come back stronger.','t-red');
     }
+  }
 
-    // Award flat workout completion bonus + session XP toast
-    awardXP(50); // workout complete bonus
-    const sessXP = S.sessionXP || 0;
-    S.sessionXP = 0;
+  awardXP(50);
+  const sessXP = S.sessionXP || 0;
+  S.sessionXP = 0;
 
-    if(dn>=S.today) S.today=Math.min(dn+1,30);
-    const nd=Object.keys(S.sets).filter(k=>k.startsWith(dn+'_')&&S.sets[k].done).length;
-    if(nd>=ts) maybeUnlockDungeon(dn); // only a fully-completed final day unlocks the dungeon
-    // Streak credit no longer comes from here — it requires a location-verified
-    // gym check-in (see gymCheckIn()) so the streak can't be faked from the couch.
-    await save();
-    sbtn.disabled=false;
-    if (nd >= ts) {
-      toast(`🔥 Day crushed! +${sessXP.toLocaleString()} XP this session!`, 't-green');
-    } else {
-      toast(`☁️ Progress saved · +${sessXP.toLocaleString()} XP`, '');
-    }
-    rWO();
-  };
-  body.appendChild(sbtn);
+  if(dn>=S.today) S.today=Math.min(dn+1,30);
+  const nd=Object.keys(S.sets).filter(k=>k.startsWith(dn+'_')&&S.sets[k].done).length;
+  if(nd>=ts) maybeUnlockDungeon(dn);
+  // Streak credit comes only from a location-verified gym check-in, not here.
+  await save();
+  if (nd >= ts) toast(`🔥 Day crushed! +${sessXP.toLocaleString()} XP this session!`, 't-green');
+  else          toast(`☁️ Progress saved · +${sessXP.toLocaleString()} XP`, '');
+  rWO();
 }
 
 function mkWU(wu){
-  const d=mk('div','wu-card fade-up');
-  d.innerHTML=`<div class="wu-lbl">🔥 WARM-UP · ${wu.duration}</div>
-    <div class="wu-title">${wu.label}</div>
-    <div class="wu-moves">${wu.moves.map(m=>`<div class="wu-move"><span class="wu-move-name">${m.name}</span><span class="wu-move-detail">${m.detail}</span></div>`).join('')}</div>`;
+  const d=mk('div');
+  d.innerHTML=`
+    <div class="wo-warm-toggle" onclick="toggleWarm()"><span>🔥 Warm-up · ${wu.duration}</span><span id="wo-warm-chev">${woWarmOpen?'▾':'▸'}</span></div>
+    <div id="wo-warm-body" class="wu-card" style="display:${woWarmOpen?'block':'none'};margin-top:0;">
+      <div class="wu-title">${wu.label}</div>
+      <div class="wu-moves">${wu.moves.map(m=>`<div class="wu-move"><span class="wu-move-name">${m.name}</span><span class="wu-move-detail">${m.detail}</span></div>`).join('')}</div>
+    </div>`;
   return d;
 }
 
@@ -2889,48 +3052,42 @@ function mkEx(dn,ei,ex,bossDay=false){
   const rec=recommendWeight(ex.name,ex.rng);
   const prg=S.prg[ex.name];
   const [rMin,rMax]=ex.rng;
-  const block=mk('div','ex-block fade-up');
+  const block=mk('div','ex-block fade-up'); block.id=`exblock_${dn}_${ei}`;
   let dc=0; for(let s=0;s<ex.sets;s++) if(S.sets[`${dn}_${ei}_${s}`]?.done) dc++;
   if(dc===ex.sets) block.classList.add('ex-complete');
   else if(dc>0) block.classList.add('ex-partial');
 
-  // Header
+  // Header — name, muscle, done/total
   const hdr=mk('div','ex-hdr');
-  hdr.innerHTML=`<div style="flex:1;min-width:0;"><div class="ex-title">${ex.name}</div><div class="ex-muscle">${db.muscle}${db.note?' · '+db.note:''}</div></div><div class="ex-ico" id="ico_${dn}_${ei}">${dc===ex.sets?'✅':dc>0?'🔄':'⬜'}</div>`;
+  hdr.innerHTML=`<div style="flex:1;min-width:0;"><div class="ex-title">${ex.name}</div><div class="ex-muscle">${db.muscle}${db.note?' · '+db.note:''}</div></div><div class="ex-count" id="ico_${dn}_${ei}">${dc}/${ex.sets}${dc===ex.sets?' ✅':''}</div>`;
   block.appendChild(hdr);
 
-  // What you should feel working — helps catch bad form without needing the video
-  if(db.target){
-    const tgt=mk('div','ex-target');
-    tgt.innerHTML=`🎯 ${db.target}`;
-    block.appendChild(tgt);
-  }
-
-  // Suggestion bar
-  const sbar=mk('div','ex-suggest');
-  if(db.bw){
-    sbar.innerHTML=`<div class="sug-left"><div class="sug-label">WEIGHT</div><div class="sug-val" style="color:var(--sub);">Bodyweight</div></div><div class="sug-right">${rMin}–${rMax} ${db.unit||'reps'}</div>`;
-  } else if(rec){
+  // One-line recommendation (kept visible — it's short and drives the set)
+  let recLine='';
+  if(db.bw) recLine=`Bodyweight · aim ${rMin}–${rMax} ${db.unit||'reps'}`;
+  else if(rec){
     const rv=rec.type==='start'?`${rec.suggest[0]}–${rec.suggest[1]} kg`:`${rec.suggest} kg`;
-    const col=rec.type==='increase'?'var(--green)':rec.type==='decrease'?'var(--red)':'var(--cyan)';
-    const icon=rec.type==='increase'?'▲ ':rec.type==='decrease'?'▼ ':'';
-    sbar.innerHTML=`<div class="sug-left"><div class="sug-label">SUGGESTED WEIGHT</div><div class="sug-val" style="color:${col};">${icon}${rv}</div>${rec.last?`<div class="sug-last">Last session: ${rec.last}kg</div>`:''} ${rec.est1RM?`<div class="sug-1rm">Est. 1RM: ${rec.est1RM}kg</div>`:''}</div><div class="sug-right">${rMin}–${rMax} reps<br><span style="font-size:9px;color:var(--sub);">(${rec.note||''})</span></div>`;
-  } else {
-    sbar.innerHTML=`<div class="sug-left"><div class="sug-label">SUGGESTED RANGE</div><div class="sug-val" style="color:var(--cyan);">${db.sug[0]}–${db.sug[1]} kg</div></div><div class="sug-right">${rMin}–${rMax} reps</div>`;
+    const icon=rec.type==='increase'?'▲':rec.type==='decrease'?'▼':'→';
+    recLine=`${icon} ${rv} · ${rMin}–${rMax} reps${rec.last?` · last ${rec.last}kg`:''}`;
+  } else recLine=`${db.sug?db.sug[0]+'–'+db.sug[1]+' kg':''} · ${rMin}–${rMax} reps`;
+  const recEl=mk('div','ex-rec'); recEl.textContent='💡 '+recLine; block.appendChild(recEl);
+
+  // Coaching + tutorial — collapsed behind a tap so set controls stay high
+  const coachKey=dn+'_'+ei, coachOpen=!!woCoachOpen[coachKey];
+  const ctrl=mk('div','ex-coach-row');
+  ctrl.innerHTML=`
+    <span class="ex-coach-toggle" onclick="toggleCoach(${dn},${ei})">ⓘ Coaching tips ${coachOpen?'▾':'▸'}</span>
+    ${db.yt?`<a class="ex-tut" href="${db.yt}" target="_blank" rel="noopener">▶ Tutorial</a>`:''}`;
+  block.appendChild(ctrl);
+  if(coachOpen && (db.target || db.tip)){
+    const cb=mk('div','ex-coach-body');
+    cb.innerHTML=`${db.target?`<div>🎯 ${db.target}</div>`:''}${db.tip?`<div style="margin-top:8px;">💡 ${db.tip}</div>`:''}`;
+    block.appendChild(cb);
   }
-  block.appendChild(sbar);
 
-  // Coach tip
-  const tip=mk('div','coach-tip'); tip.id=`tip_${dn}_${ei}`; block.appendChild(tip);
-
-  // Set table header
-  const thdr=mk('div','set-table-hdr');
-  thdr.style.gridTemplateColumns='28px 1fr 1fr 30px 20px 52px';
-  thdr.innerHTML=`<span>Set</span><span>Weight kg</span><span>Reps done</span><span>✓</span><span></span><span style="color:var(--accent-ink);text-align:center;">XP</span>`;
-  block.appendChild(thdr);
-
-  // Set rows
-  const rw=mk('div'); for(let s=0;s<ex.sets;s++) rw.appendChild(mkSetRow(dn,ei,s,ex,db,bossDay));
+  // Set rows — active set gets ± steppers, the rest show plain
+  const activeIdx=(()=>{ for(let s=0;s<ex.sets;s++) if(!S.sets[`${dn}_${ei}_${s}`]?.done) return s; return -1; })();
+  const rw=mk('div','gset-list'); for(let s=0;s<ex.sets;s++) rw.appendChild(gSetRow(dn,ei,s,ex,db,bossDay,activeIdx));
   block.appendChild(rw);
 
   // Drop sets
@@ -2963,66 +3120,36 @@ function mkEx(dn,ei,ex,bossDay=false){
   }
   block.appendChild(prBanner);
 
-  // ── YouTube tutorial + form tip ──────────────────────────
-  if(db.yt || db.tip){
-    const ytRow = mk('div');
-    ytRow.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 14px;border-top:1px solid var(--border2);background:rgba(255,0,0,.04);';
-    if(db.tip){
-      const tipEl = mk('div');
-      tipEl.style.cssText='flex:1;font-size:11px;color:var(--sub2);line-height:1.5;';
-      tipEl.textContent='💡 '+db.tip;
-      ytRow.appendChild(tipEl);
-    }
-    if(db.yt){
-      const ytBtn = mk('a');
-      ytBtn.href=db.yt; ytBtn.target='_blank'; ytBtn.rel='noopener';
-      ytBtn.style.cssText='display:flex;align-items:center;gap:4px;flex-shrink:0;background:#ff0000;color:#fff;border-radius:6px;padding:6px 10px;font-size:10.5px;font-weight:700;font-family:var(--fm);text-decoration:none;white-space:nowrap;';
-      ytBtn.innerHTML='▶ Tutorial';
-      ytRow.appendChild(ytBtn);
-    }
-    block.appendChild(ytRow);
-  }
-
   return block;
 }
 
-function mkSetRow(dn,ei,s,ex,db,bossDay=false){
+/* One set row. The active set (first not-done) shows ± steppers; the rest show
+   a plain "kg × reps" summary. Done sets dim. Tapping ✓ logs and advances. */
+function gSetRow(dn,ei,s,ex,db,bossDay,activeIdx){
   const k=`${dn}_${ei}_${s}`, sd=S.sets[k]||{};
   const [rMin,rMax]=ex.rng;
-  const row=mk('div','set-row'+(sd.done?(sd.reps>=rMax?' sr-above':sd.reps<rMin?' sr-fail':' sr-done'):''));
-  row.id=`row_${k}`;
-  row.style.gridTemplateColumns='28px 1fr 1fr 30px 20px 52px';
-  const sn=mk('div','set-num'); sn.textContent=`S${s+1}`; row.appendChild(sn);
-  // Weight input
-  const wi=mk('input'); wi.type='number'; wi.className='set-input'; wi.id=`wi_${k}`;
-  wi.min=0; wi.max=500; wi.step='0.5'; wi.placeholder='kg';
-  if(sd.wt!=null) wi.value=sd.wt;
-  wi.oninput=()=>{const v=parseFloat(wi.value);if(!isNaN(v)){if(!S.sets[k])S.sets[k]={};S.sets[k].wt=v;}};
-  row.appendChild(wi);
-  // Reps input
-  const ri=mk('input'); ri.type='number'; ri.className='set-input'; ri.id=`ri_${k}`;
-  ri.min=0; ri.max=100; ri.placeholder='reps';
-  if(sd.reps!=null) ri.value=sd.reps;
-  if(sd.done&&sd.reps!=null) clrRep(ri,sd.reps,rMin,rMax);
-  ri.oninput=()=>{const v=parseInt(ri.value);if(!isNaN(v)){if(!S.sets[k])S.sets[k]={};S.sets[k].reps=v;clrRep(ri,v,rMin,rMax);liveCoachTip(dn,ei,v,rMin,rMax);}};
-  row.appendChild(ri);
-  // Checkbox
-  const chk=mk('div','set-chk'+(sd.done?' chk-on':'')); chk.id=`chk_${k}`;
-  chk.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-  chk.onclick=()=>toggleSet(dn,ei,s,ex,bossDay);
-  row.appendChild(chk);
-  const fb=mk('div','set-fb'); fb.id=`fb_${k}`;
-  if(sd.done&&sd.reps!=null){const f=setFeedback(sd.reps,rMin,rMax);if(f)fb.textContent=f.emoji;}
-  row.appendChild(fb);
-  // XP flash column
-  const xpfl=mk('div','set-xp-flash'); xpfl.id=`xpfl_${k}`;
-  if (sd.done && sd.wt!=null && sd.reps!=null) {
-    const {xp,mult,isPR} = calcSetXP(ex.name,sd.wt,sd.reps,rMin,rMax,dn,bossDay);
-    xpfl.textContent=`+${xp}`;
-    xpfl.classList.add('show');
-    if(isPR) xpfl.style.color='var(--yellow)';
+  const isActive = s===activeIdx;
+  const wt   = sd.wt!=null   ? sd.wt   : woDefault(dn,ei,s,ex,db,'wt');
+  const reps = sd.reps!=null ? sd.reps : woDefault(dn,ei,s,ex,db,'reps');
+  const inc  = db.inc || 2.5;
+  const repClass = reps>=rMax?'gv-up':reps>=rMin?'gv-ok':reps>0?'gv-dn':'';
+  const row=mk('div','gset-row'+(sd.done?' gset-done':'')+(isActive?' gset-active':''));
+
+  const label=`<span class="gset-label">SET ${s+1}</span>`;
+  let vals;
+  if(isActive){
+    const kgCell = db.bw
+      ? `<span class="gset-bw">BW</span>`
+      : `<span class="gstep"><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'wt',${-inc})">−</button><span class="gstep-v">${wt} kg</span><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'wt',${inc})">+</button></span>`;
+    const repCell = `<span class="gstep"><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'reps',-1)">−</button><span class="gstep-v reps ${repClass}">${reps}</span><button class="gstep-b" onclick="adjustSet(${dn},${ei},${s},'reps',1)">+</button></span>`;
+    vals=`${kgCell}<span class="gset-x">×</span>${repCell}`;
+  } else {
+    const kgTxt = db.bw ? 'BW' : (wt!=null? wt+' kg':'—');
+    vals=`<span class="gset-plain">${kgTxt}</span><span class="gset-x">×</span><span class="gset-plain ${sd.done?repClass:''}">${reps!=null?reps:'—'}</span>`;
   }
-  row.appendChild(xpfl);
+  const f = sd.done ? setFeedback(reps,rMin,rMax) : null;
+  const check=`<span class="gset-check${sd.done?' on':''}${isActive&&!sd.done?' ready':''}" onclick="toggleSet(${dn},${ei},${s})">${sd.done?'✓':f?'':''}</span>`;
+  row.innerHTML=`${label}<span class="gset-vals">${vals}${f?`<span class="gset-fb">${f.emoji}</span>`:''}</span>${check}`;
   return row;
 }
 
@@ -3058,77 +3185,38 @@ function toggleDrop(dn,ei,ex,block){
   if(dr){dr.classList.toggle('open',isOn);dr.innerHTML='';if(isOn){for(let ddi=0;ddi<2;ddi++) dr.appendChild(mkDropRow(dn,ei,ddi,ex,EDB[ex.name]||{}));toast('💥 Drop sets enabled — reduce weight 20–30%','t-purple');}}
 }
 
-function toggleSet(dn,ei,s,ex,bossDay=false){
-  const k=`${dn}_${ei}_${s}`;
-  const wi=document.getElementById(`wi_${k}`), ri=document.getElementById(`ri_${k}`);
-  const wt=parseFloat(wi?.value)||0, reps=parseInt(ri?.value)||0;
+/* Guided toggle: commits the set's (stepper or default) values, awards XP / checks
+   PR, starts the rest timer, then re-renders the block so the active set advances. */
+function toggleSet(dn,ei,s){
+  const ex=exsForDay(dn)[ei]; if(!ex) return;
+  const bossDay=isBossDay(dn), db=EDB[ex.name]||{}, k=`${dn}_${ei}_${s}`;
+  const [rMin,rMax]=ex.rng;
   if(!S.sets[k]) S.sets[k]={};
-  const wasDone = S.sets[k].done;
-  S.sets[k].done=!wasDone; S.sets[k].wt=wt; S.sets[k].reps=reps;
+  // Commit stepper values (or suggested defaults if the user never touched them).
+  if(S.sets[k].wt==null)   S.sets[k].wt   = db.bw ? 0 : (woDefault(dn,ei,s,ex,db,'wt')||0);
+  if(S.sets[k].reps==null) S.sets[k].reps = woDefault(dn,ei,s,ex,db,'reps')||0;
+  const wasDone=S.sets[k].done;
+  S.sets[k].done=!wasDone;
+  const wt=S.sets[k].wt||0, reps=S.sets[k].reps||0;
 
-  // ── Award XP when marking DONE ──────────────────────
-  if (S.sets[k].done && reps > 0) {
-    const [rMin,rMax]=ex.rng;
-    const {xp, mult, isPR} = calcSetXP(ex.name, wt, reps, rMin, rMax, dn, bossDay);
+  if(S.sets[k].done && reps>0){
+    const {xp, isPR} = calcSetXP(ex.name, wt, reps, rMin, rMax, dn, bossDay);
     awardXP(xp);
-
-    // Show XP flash
-    const xpfl = document.getElementById(`xpfl_${k}`);
-    if (xpfl) {
-      xpfl.textContent = isPR ? `+${xp} 🏆` : `+${xp}`;
-      xpfl.style.color = isPR ? 'var(--yellow)' : 'var(--accent)';
-      xpfl.classList.add('show');
-    }
-
-    // Show PR banner if new PR
-    if (isPR) {
-      const prBanner = document.getElementById(`pr_${dn}_${ei}`);
-      if (prBanner) {
-        const rec = S.prRecs[ex.name];
-        prBanner.textContent = `🏆 NEW PR! ${rec.wt}kg × ${rec.reps} reps!`;
-        prBanner.classList.add('show');
-      }
-      toast(`🏆 NEW PR on ${ex.name}! ${wt}kg × ${reps} reps`, 't-green');
-    }
-
-    // Update boss HP bar
-    if (bossDay) {
-      const sc = SCH[dn-1];
-      const ampExs = sc?.exs ? bossifyExs(sc.exs) : [];
-      const hp = calcBossHP(dn, ampExs);
-      const hpFill = document.getElementById('boss-hp-fill');
-      if (hpFill && hp.total > 0) {
-        hpFill.style.width = Math.round((hp.left / hp.total) * 100) + '%';
-      }
-      const hpLabel = document.querySelector('.boss-hp-label span:last-child');
-      if (hpLabel) hpLabel.textContent = `${hp.left} / ${hp.total} sets remaining`;
-      if (S.boss) S.boss.hpLeft = hp.left;
-    }
-  } else if (!S.sets[k].done) {
-    // Un-marking: hide XP flash
-    const xpfl = document.getElementById(`xpfl_${k}`);
-    if (xpfl) { xpfl.classList.remove('show'); xpfl.textContent=''; }
+    if(isPR){ const rec=S.prRecs[ex.name]; toast(`🏆 NEW PR on ${ex.name}! ${rec.wt}kg × ${rec.reps}`,'t-green'); }
+    else    { toast(`✓ Set logged · +${xp} XP · resting 1:15`,''); }
+    startRest(75);
   }
 
-  // Optimistic local save first, then cloud
   window._saveToLocal();
   window._saveToCloud();
-
-  const chk=document.getElementById(`chk_${k}`); if(chk) chk.classList.toggle('chk-on',S.sets[k].done);
-  const [rMin,rMax]=ex.rng;
-  const row=document.getElementById(`row_${k}`);
-  if(row){row.classList.remove('sr-done','sr-fail','sr-above');if(S.sets[k].done){if(reps<rMin)row.classList.add('sr-fail');else if(reps>=rMax)row.classList.add('sr-above');else row.classList.add('sr-done');}}
-  if(ri) clrRep(ri,reps,rMin,rMax);
-  const fb=document.getElementById(`fb_${k}`);
-  if(fb){const f=S.sets[k].done?setFeedback(reps,rMin,rMax):null;fb.textContent=f?f.emoji:'';}
-  let dct=0; for(let i=0;i<ex.sets;i++) if(S.sets[`${dn}_${ei}_${i}`]?.done) dct++;
-  const ico=document.getElementById(`ico_${dn}_${ei}`); if(ico) ico.textContent=dct===ex.sets?'✅':dct>0?'🔄':'⬜';
-  const blk=row?.closest('.ex-block');
-  if(blk){blk.classList.toggle('ex-complete',dct===ex.sets);blk.classList.toggle('ex-partial',dct>0&&dct<ex.sets);}
+  refreshExBlock(dn,ei);
+  updateSessionHeader(dn);
+  updateBossHP(dn);
+  updateXPUI();
 }
 
+// Rep-range colouring for the drop-set number inputs (kept as-is).
 function clrRep(el,r,mn,mx){el.classList.remove('si-up','si-ok','si-dn');if(r>=mx)el.classList.add('si-up');else if(r>=mn)el.classList.add('si-ok');else if(r>0)el.classList.add('si-dn');}
-function liveCoachTip(dn,ei,r,mn,mx){const t=document.getElementById(`tip_${dn}_${ei}`);if(!t)return;const f=setFeedback(r,mn,mx);if(!f){t.className='coach-tip';t.textContent='';return;}t.className=`coach-tip ${f.cls}`;t.textContent=f.emoji+' '+f.msg;}
 
 /* ════════════════════════════════════════════════
    HISTORY SCREEN
