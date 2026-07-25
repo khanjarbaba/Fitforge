@@ -448,6 +448,109 @@ a { text-decoration: none; }
 }
 .sub-title { font-family: var(--fd); font-size: 20px; letter-spacing: 2px; color: var(--accent-ink); }
 
+/* ══════════════════════════════════════════════════
+   DUNGEON — "Bone & Rust" skin, fully scoped to .dungeon
+   so it never leaks into the lime app. Menacing, warm-dark.
+══════════════════════════════════════════════════ */
+.dungeon {
+  --dg-bg:      #0e0b09;
+  --dg-surface: #17120f;
+  --dg-surface2:#1f1813;
+  --dg-border:  #33281f;
+  --dg-rust:    #d97757;   /* accent */
+  --dg-rust-d:  #94492f;
+  --dg-bone:    #ece5da;   /* text */
+  --dg-muted:   #9a8a7b;
+  --dg-danger:  #c5482f;
+  --dg-ok:      #7aa06a;
+  background: var(--dg-bg); color: var(--dg-bone);
+}
+.dungeon .dg-hdr { background: var(--dg-bg); border-bottom: 1px solid var(--dg-border); }
+.dungeon .sub-back { border-color: var(--dg-border); color: var(--dg-muted); }
+.dg-title { color: var(--dg-rust) !important; }
+.dungeon .dg-lede { padding: 4px 16px 8px; }
+.dungeon .dg-lede h4 { font-family: var(--fd); font-size: 22px; letter-spacing: 1.5px; color: var(--dg-bone); margin: 6px 0 3px; }
+.dungeon .dg-lede p  { font-size: 12px; color: var(--dg-muted); margin: 0; }
+.dungeon .dg-group-hdr { display: flex; align-items: center; gap: 8px; padding: 14px 16px 8px; }
+.dungeon .dg-threat { font-family: var(--fm); font-size: 10px; letter-spacing: 1.5px; color: var(--dg-muted); }
+.dungeon .dg-risk { font-family: var(--fm); font-size: 9px; letter-spacing: 1px; color: var(--dg-rust); }
+.dg-flames { display: flex; gap: 2px; }
+
+/* Boss card — square, hairline, warm */
+.dungeon .dg-card {
+  position: relative; margin: 0 13px 12px; border: 1px solid var(--dg-border);
+  background: var(--dg-surface); border-radius: 4px; overflow: hidden;
+}
+.dungeon .dg-card.dg-open   { border-color: var(--dg-rust); }
+.dungeon .dg-card.dg-locked { opacity: .5; }
+.dungeon .dg-card.dg-slain  { border-style: dashed; }
+.dungeon .dg-cardhead { display: flex; align-items: center; gap: 12px; padding: 13px 14px; cursor: default; }
+.dungeon .dg-icon {
+  width: 52px; height: 52px; flex: none; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  font-size: 26px; background: var(--dg-surface2); border: 1px solid var(--dg-border);
+}
+.dungeon .dg-open .dg-icon { border-color: var(--dg-rust-d); }
+.dungeon .dg-name { font-family: var(--fd); font-size: 19px; letter-spacing: .5px; color: var(--dg-bone); line-height: 1.05; }
+.dungeon .dg-kicker { font-family: var(--fm); font-size: 9.5px; letter-spacing: 1.5px; color: var(--dg-rust); text-transform: uppercase; }
+.dungeon .dg-creature { font-size: 11px; color: var(--dg-muted); margin-top: 2px; }
+.dungeon .dg-daytag {
+  flex: none; font-family: var(--fm); font-size: 11px; padding: 4px 10px; border: 1px solid var(--dg-rust); color: var(--dg-rust);
+}
+.dungeon .dg-badge { flex: none; font-size: 18px; }
+.dungeon .dg-body { padding: 0 14px 14px; border-top: 1px solid var(--dg-border); }
+.dungeon .dg-detail { font-size: 13px; color: var(--dg-muted); font-style: italic; line-height: 1.5; margin: 12px 0; }
+.dungeon .dg-targets { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.dungeon .dg-target-row { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; padding: 8px 0; border-bottom: 1px solid var(--dg-border); }
+.dungeon .dg-target-row:last-child { border-bottom: none; }
+.dungeon .dg-target-v { font-family: var(--fm); color: var(--dg-rust); font-weight: 700; }
+.dungeon .dg-grudge {
+  font-size: 12px; color: var(--dg-danger); background: rgba(197,72,47,.08); border: 1px solid rgba(197,72,47,.3);
+  border-radius: 4px; padding: 9px 11px; line-height: 1.5; margin: 10px 0;
+}
+.dungeon .dg-locknote { font-size: 11.5px; color: var(--dg-muted); padding: 4px 0 2px; }
+
+/* Buttons */
+.dungeon .dg-btn {
+  width: 100%; padding: 15px; border: 1px solid var(--dg-rust); background: var(--dg-rust); color: #1a0e08;
+  font-family: var(--fd); font-size: 19px; letter-spacing: 1.5px; cursor: pointer; border-radius: 4px;
+}
+.dungeon .dg-btn:active { background: var(--dg-rust-d); }
+.dungeon .dg-btn-ghost { background: transparent; color: var(--dg-rust); }
+.dungeon .dg-foot { padding: 6px 13px 18px; }
+.dungeon .dg-count { font-size: 11px; color: var(--dg-muted); margin: 0 0 8px; text-align: center; }
+
+/* Battle view — HP / damage bar */
+.dungeon .dg-hp-wrap { height: 14px; border-radius: 3px; background: var(--dg-surface2); border: 1px solid var(--dg-border); overflow: hidden; margin: 8px 0 4px; }
+.dungeon .dg-hp-fill { height: 100%; background: linear-gradient(90deg, var(--dg-rust-d), var(--dg-rust)); transition: width .4s; }
+.dungeon .dg-stat-row { display: flex; gap: 9px; margin: 12px 0; }
+.dungeon .dg-stat { flex: 1; background: var(--dg-surface2); border: 1px solid var(--dg-border); border-radius: 4px; padding: 10px; text-align: center; }
+.dungeon .dg-stat-v { font-family: var(--fd); font-size: 22px; color: var(--dg-bone); line-height: 1; }
+.dungeon .dg-stat-v.warn { color: var(--dg-danger); }
+.dungeon .dg-stat-l { font-family: var(--fm); font-size: 8.5px; letter-spacing: 1px; color: var(--dg-muted); margin-top: 3px; text-transform: uppercase; }
+.dungeon .dg-cal-input { width: 100%; background: var(--dg-surface2); border: 1px solid var(--dg-border); border-radius: 4px; padding: 10px 12px; color: var(--dg-bone); font-family: var(--fm); font-size: 14px; }
+
+/* Full-screen dungeon overlays (commit / victory / defeat) */
+.dg-overlay {
+  position: fixed; inset: 0; z-index: 10002; display: none; flex-direction: column;
+  align-items: center; justify-content: center; padding: 28px; text-align: center;
+  background: #0b0806; color: var(--dg-bone, #ece5da);
+}
+.dg-overlay.show { display: flex; }
+.dg-overlay .dg-ov-icon { font-size: 60px; }
+.dg-overlay .dg-ov-title { font-family: var(--fd); font-size: 34px; letter-spacing: 3px; margin-top: 10px; color: #d97757; }
+.dg-overlay .dg-ov-taunt { font-size: 14px; font-style: italic; color: #c9b8aa; max-width: 320px; line-height: 1.6; margin: 14px 0 24px; }
+.dg-overlay .dg-btn { max-width: 320px; }
+
+/* Today's "Enter Dungeon" banner (rust, stands apart from the lime app) */
+.dg-enter {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin: 12px 13px 2px; padding: 14px 15px; cursor: pointer; border-radius: var(--r);
+  background: linear-gradient(135deg, #1f130d, #14100e); border: 1px solid #6d341f;
+}
+.dg-enter-t { font-family: var(--fd); font-size: 17px; letter-spacing: 1px; color: #d97757; }
+.dg-enter-s { font-size: 11px; color: #9a8a7b; margin-top: 2px; }
+.dg-enter-cta { font-family: var(--fm); font-size: 11px; color: #d97757; white-space: nowrap; }
+
 /* ── Guided session: sticky header, rest bar, steppers ── */
 .wo-sess {
   position: sticky; top: 0; z-index: 20;
@@ -1070,6 +1173,9 @@ a { text-decoration: none; }
       <button class="btn-cta" onclick="goWO()">START TODAY'S WORKOUT →</button>
     </div>
 
+    <!-- Post-program endgame entry — filled by rDash only once the dungeon is unlocked -->
+    <div id="dungeon-today"></div>
+
     <div class="card">
       <div class="card-hdr">TODAY'S BRIEF</div>
       <div id="d-brief"></div>
@@ -1089,7 +1195,7 @@ a { text-decoration: none; }
     </div>
     <!-- Compact daily entry points; the full screens live under YOU -->
     <div id="gym-today"></div>
-    <div class="row-link" onclick="openSub('stake')">
+    <div class="row-link" onclick="openSub('stake','today')">
       <div><div class="row-link-t">💰 STAKE CHALLENGE</div><div class="row-link-s" id="stake-today-sub">Put money on your streak</div></div>
       <span class="row-link-cta">Open ›</span>
     </div>
@@ -1214,6 +1320,11 @@ a { text-decoration: none; }
     <div class="sub-hdr"><div class="sub-back" onclick="closeSub()">‹</div><div class="sub-title">GYM CHECK-IN</div></div>
     <div class="card"><div id="gym-body"></div></div>
   </div>
+  <!-- Dungeon (Bone & Rust skin, scoped to .dungeon) -->
+  <div class="screen dungeon" id="s-sub-dungeon">
+    <div class="sub-hdr dg-hdr"><div class="sub-back" onclick="closeSub()">‹</div><div class="sub-title dg-title">THE BLACK TRIALS</div></div>
+    <div id="dungeon-body"></div>
+  </div>
 
   <!-- One-time display-name prompt (after Google sign-in) -->
   <div id="name-overlay">
@@ -1263,6 +1374,9 @@ a { text-decoration: none; }
 </div>
 
 <div id="toast"></div>
+
+<!-- Dungeon overlays: commit / victory / defeat (Bone & Rust) -->
+<div class="dg-overlay" id="dg-overlay"></div>
 
 <!-- ══════════════════════════════════════════════════════════
      MAIN APP LOGIC (non-module, runs after Firebase module)
@@ -2088,8 +2202,9 @@ function sw(id, btn) {
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
   const scr = document.getElementById('s-'+id);
   if (scr) scr.classList.add('active');
-  // Sub-pages are opened without a nav button — keep YOU lit so the user knows where they are.
-  const navBtn = btn || document.getElementById(id.startsWith('sub-') ? 'nb-you' : 'nb-'+id);
+  // Sub-pages are opened without a nav button — keep the ORIGIN tab lit (the tab
+  // the sub-page was pushed from), so the user knows where they'll return to.
+  const navBtn = btn || document.getElementById(id.startsWith('sub-') ? 'nb-'+(subFrom||'you') : 'nb-'+id);
   if (navBtn) navBtn.classList.add('on');
   if (scr) scr.scrollTop = 0;
   const subs = { today:'ADAPTIVE COACH', wo:'EXECUTE · FORGE · ADAPT', prog:'PROGRESS & RECORDS',
@@ -2103,11 +2218,13 @@ function sw(id, btn) {
   if (id==='sub-lead')  rRank();
   if (id==='sub-stake') rStake();
   if (id==='sub-gym')   rGymCheckin(SCH[Math.min(S.today,30)-1] || SCH[0]);
+  if (id==='sub-dungeon') rDungeon();
 }
 
-// Sub-pages are pushed from YOU and keep the YOU tab lit while open.
-function openSub(name) { sw('sub-' + name); }
-function closeSub()    { sw('you', document.getElementById('nb-you')); }
+// Sub-pages remember the tab they were opened from (default YOU) and return there.
+let subFrom = 'you';
+function openSub(name, from) { subFrom = from || 'you'; sw('sub-' + name); }
+function closeSub()         { sw(subFrom, document.getElementById('nb-'+subFrom)); }
 function goWO() { S.viewDay = S.today; sw('wo', document.getElementById('nb-wo')); }
 
 /* PROGRESS screen: one story — Sessions / PRs / Body (was two separate tabs) */
@@ -2180,6 +2297,29 @@ function rDash() {
       : st.status === 'unlocked' ? `₹${st.amount} unlocked — tap to claim`
       : 'Streak broke — stake stays put';
   }
+  rDungeonToday();
+}
+
+// Today's dungeon banner — only appears once the 30-day program is complete.
+function rDungeonToday() {
+  const el = document.getElementById('dungeon-today');
+  if (!el) return;
+  if (!dungeonReady()) { el.innerHTML = ''; return; }
+  const run = _dungeon().run;
+  let sub, cta;
+  if (run) {
+    const b = bossById(_dungeon().activeBossId), p = dungeonPace();
+    sub = `Fighting ${b.name.split(',')[0]} · ${p.volumePct}% · ${p.daysLeft}d left`;
+    cta = p.behind ? '⚠ Behind ›' : 'Fight ›';
+  } else if (allBossesDefeated()) {
+    sub = 'Every boss slain — the bestiary is empty'; cta = 'View ›';
+  } else {
+    const nb = bossById(nextBossId());
+    sub = `Next trial: ${nb ? nb.name.split(',')[0] : ''}`; cta = 'Enter ›';
+  }
+  el.innerHTML = `<div class="dg-enter" onclick="openSub('dungeon','today')">
+    <div><div class="dg-enter-t">⚔️ THE DUNGEON</div><div class="dg-enter-s">${sub}</div></div>
+    <span class="dg-enter-cta">${cta}</span></div>`;
 }
 // Real-time streak: counts consecutive calendar days credited via bumpStreak().
 // Breaks (reads as 0) once a day is missed, regardless of in-app day progress.
@@ -2290,15 +2430,15 @@ function rGymToday(sc) {
   const el = document.getElementById('gym-today');
   if (!el) return;
   if (sc && sc.isRest) {
-    el.innerHTML = `<div class="row-link" onclick="openSub('gym')">
+    el.innerHTML = `<div class="row-link" onclick="openSub('gym','today')">
       <div><div class="row-link-t">📍 GYM CHECK-IN</div><div class="row-link-s">Rest day — no check-in needed</div></div>
       <span class="row-link-cta">View ›</span></div>`;
     return;
   }
   const checkedIn = S.lastStreakDate === todayYMD();
   let sub, cta, action;
-  if (!S.gym)        { sub = 'Set your gym so streaks only count there'; cta = 'Set up ›';    action = "openSub('gym')"; }
-  else if (checkedIn){ sub = "✓ Checked in today — streak secured";      cta = 'View ›';      action = "openSub('gym')"; }
+  if (!S.gym)        { sub = 'Set your gym so streaks only count there'; cta = 'Set up ›';    action = "openSub('gym','today')"; }
+  else if (checkedIn){ sub = "✓ Checked in today — streak secured";      cta = 'View ›';      action = "openSub('gym','today')"; }
   else               { sub = 'Verify you\'re at the gym to earn today';  cta = 'Check in ›';  action = 'gymCheckIn()'; }
   el.innerHTML = `<div class="row-link" onclick="${action}">
     <div><div class="row-link-t">📍 GYM CHECK-IN</div><div class="row-link-s">${sub}</div></div>
@@ -2632,6 +2772,158 @@ function consumeDungeonEvent() {
   const d = _dungeon();
   const ev = d.lastEvent; d.lastEvent = null;
   return ev;
+}
+
+/* ════════════════════════════════════════════════
+   DUNGEON — UI (Bone & Rust). Reads the engine above.
+   Single-select + progressive lock: one boss at a time,
+   only the next undefeated is selectable.
+════════════════════════════════════════════════ */
+function dgFlames(level){ // level 10-60 → 1-6 filled flames of 6
+  const filled = Math.round(level/10);
+  let out='';
+  for(let n=1;n<=6;n++){
+    const on = n<=filled;
+    out += `<svg width="11" height="11" viewBox="0 0 24 24" style="color:${on?'var(--dg-rust)':'var(--dg-border)'};opacity:${on?1:.6}" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>`;
+  }
+  return out;
+}
+function kg(n){ return n>=1000 ? (Math.round(n/100)/10)+'k' : String(n); }
+
+// Entry router: pending win/loss overlay first, else battle or selection.
+function rDungeon(){
+  const body=document.getElementById('dungeon-body'); if(!body) return;
+  const ev = _dungeon().lastEvent;
+  if(ev){ showDungeonEvent(ev); return; } // overlay handles re-render on dismiss
+  if(_dungeon().run) rDungeonBattle(body);
+  else               rDungeonSelect(body);
+}
+
+// ── Boss selection (single-select, progressive lock) ──
+function rDungeonSelect(body){
+  const next=nextBossId();
+  let html=`<div class="dg-lede"><h4>Choose Your Doom</h4><p>One trial at a time. No retreat. Losing is the point.</p></div>`;
+  BOSSES.forEach((b,i)=>{
+    const rec=bossRecord(b.id);
+    const eff=bossEffective(b.id);
+    const state = rec.defeated ? 'slain' : (b.id===next ? 'open' : 'locked');
+    const icon=`<div class="dg-icon">${b.emoji}</div>`;
+    if(state==='slain'){
+      const when=rec.defeatedAt?new Date(rec.defeatedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'';
+      html+=`<div class="dg-card dg-slain"><div class="dg-cardhead">${icon}
+        <div style="flex:1;min-width:0;"><div class="dg-kicker">SLAIN${when?' · '+when:''}</div><div class="dg-name">${b.name}</div>
+        <div class="dg-flames" style="margin-top:5px;">${dgFlames(b.level)}</div></div>
+        <div class="dg-badge">🏆</div></div></div>`;
+    } else if(state==='locked'){
+      const prev=BOSSES[i-1];
+      html+=`<div class="dg-card dg-locked"><div class="dg-cardhead">${icon}
+        <div style="flex:1;min-width:0;"><div class="dg-kicker">LVL ${b.level}</div><div class="dg-name">${b.name}</div>
+        <div class="dg-locknote">🔒 Defeat ${prev?prev.name.split(',')[0]:'the last'} first</div></div>
+        <div class="dg-flames">${dgFlames(b.level)}</div></div></div>`;
+    } else { // open — the one selectable trial
+      const grudgeNote = rec.grudge>0 ? `<div class="dg-grudge">⚔️ This one remembers you — beaten you ${rec.grudge}×. It returns harder: ${kg(eff.volumeTarget)}kg${eff.calorieTarget?' + '+eff.calorieTarget+' kcal':''} in ${eff.windowDays} days.</div>` : '';
+      const calRow = eff.calorieTarget ? `<div class="dg-target-row"><span>🔥 Burn (secondary)</span><span class="dg-target-v">${eff.calorieTarget.toLocaleString()} kcal</span></div>` : '';
+      html+=`<div class="dg-card dg-open"><div class="dg-cardhead">${icon}
+        <div style="flex:1;min-width:0;"><div class="dg-kicker">LVL ${b.level} · ${b.creature}</div><div class="dg-name">${b.name}</div>
+        <div class="dg-flames" style="margin-top:5px;">${dgFlames(b.level)}</div></div>
+        <div class="dg-daytag">${eff.windowDays} DAYS</div></div>
+        <div class="dg-body">
+          <div class="dg-detail">“${b.taunts.greet}”</div>
+          ${grudgeNote}
+          <div class="dg-targets">
+            <div class="dg-target-row"><span>💥 Deal damage (volume)</span><span class="dg-target-v">${kg(eff.volumeTarget)}kg</span></div>
+            ${calRow}
+            <div class="dg-target-row"><span>⏳ Before the deadline</span><span class="dg-target-v">${eff.windowDays} days</span></div>
+          </div>
+          <button class="dg-btn" onclick="dgConfirm('${b.id}')">⚔️ DESCEND INTO THE TRIAL</button>
+        </div></div>`;
+    }
+  });
+  if(!next) html+=`<div class="dg-lede" style="text-align:center;padding:24px 16px;"><h4>THE BESTIARY IS EMPTY</h4><p>Every boss slain. There are no monsters left but you.</p></div>`;
+  body.innerHTML=html;
+}
+
+// ── Commit confirmation ("THE PACT IS SEALED") ──
+function dgConfirm(id){
+  const eff=bossEffective(id);
+  const ov=document.getElementById('dg-overlay');
+  ov.innerHTML=`
+    <div class="dg-ov-icon">${bossById(id).emoji}</div>
+    <div class="dg-ov-title">THE PACT IS SEALED?</div>
+    <div class="dg-ov-taunt">Selecting ${bossById(id).name} starts the clock now — ${eff.windowDays} days, and it does not stop. Fail and the boss wins.</div>
+    <button class="dg-btn" onclick="dgSeal('${id}')">Seal Your Fate</button>
+    <button class="dg-btn dg-btn-ghost" style="margin-top:10px;" onclick="hideDungeonOverlay()">Flee</button>`;
+  ov.classList.add('show');
+}
+function dgSeal(id){
+  const res=startBoss(id);
+  hideDungeonOverlay();
+  if(res.ok){ save(); toast('⚔️ The trial begins.','t-red'); }
+  rDungeon();
+}
+function hideDungeonOverlay(){ const ov=document.getElementById('dg-overlay'); ov.classList.remove('show'); ov.innerHTML=''; }
+
+// ── Active battle view ──
+function rDungeonBattle(body){
+  const d=_dungeon(), run=d.run, b=bossById(d.activeBossId);
+  const pace=dungeonPace();
+  const hpPct=pace.volumePct;
+  const calBlock = run.calorieTarget ? `
+    <div style="margin-top:16px;">
+      <div class="dg-target-row" style="border:none;padding:0;"><span>🔥 Calories burned (secondary)</span><span class="dg-target-v">${run.caloriesDone.toLocaleString()} / ${run.calorieTarget.toLocaleString()}</span></div>
+      <div class="dg-hp-wrap" style="height:8px;"><div class="dg-hp-fill" style="width:${pace.caloriePct}%"></div></div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <input class="dg-cal-input" id="dg-cal-input" type="number" inputmode="numeric" placeholder="Today's kcal from your watch">
+        <button class="dg-btn" style="width:auto;padding:0 16px;font-size:14px;" onclick="dgLogCalories()">Log</button>
+      </div>
+    </div>` : '';
+  body.innerHTML=`
+    <div class="dg-lede" style="text-align:center;">
+      <div style="font-size:54px;">${b.emoji}</div>
+      <h4 style="margin-top:4px;">${b.name}</h4>
+      <p>${b.creature} · Lv ${b.level}${bossRecord(b.id).grudge>0?' · GRUDGE '+bossRecord(b.id).grudge:''}</p>
+    </div>
+    <div class="dg-card dg-open" style="border:none;background:transparent;"><div class="dg-body" style="border-top:none;">
+      <div class="dg-target-row" style="border:none;padding:0;"><span>💥 Damage dealt</span><span class="dg-target-v">${kg(run.volumeDone)} / ${kg(run.volumeTarget)} kg</span></div>
+      <div class="dg-hp-wrap"><div class="dg-hp-fill" style="width:${hpPct}%"></div></div>
+      <div class="dg-stat-row">
+        <div class="dg-stat"><div class="dg-stat-v">${hpPct}%</div><div class="dg-stat-l">Boss HP gone</div></div>
+        <div class="dg-stat"><div class="dg-stat-v ${pace.daysLeft<=2?'warn':''}">${pace.daysLeft}</div><div class="dg-stat-l">Days left</div></div>
+        <div class="dg-stat"><div class="dg-stat-v ${pace.behind?'warn':''}">${pace.behind?'BEHIND':'ON PACE'}</div><div class="dg-stat-l">Pace</div></div>
+      </div>
+      ${calBlock}
+      <div class="dg-detail" style="text-align:center;">“${b.taunts.greet}”</div>
+      <div class="dg-grudge" style="color:var(--dg-muted);background:transparent;border-color:var(--dg-border);">
+        Deal damage by training — every completed set counts, but only on days you check in at the gym. ${run.calorieTarget?'You must also hit the calorie target.':''}
+      </div>
+    </div></div>`;
+}
+function dgLogCalories(){
+  const inp=document.getElementById('dg-cal-input');
+  const v=parseInt(inp?.value);
+  if(isNaN(v)||v<=0){ toast('Enter today\'s calories','t-red'); return; }
+  const res=bossLogCalories(v);
+  save();
+  toast(`🔥 ${v.toLocaleString()} kcal logged`,'t-green');
+  rDungeon(); // re-renders, and shows victory overlay if that just tipped it
+}
+
+// ── Victory / defeat overlay (consumes lastEvent) ──
+function showDungeonEvent(ev){
+  const ov=document.getElementById('dg-overlay');
+  const win = ev.event==='victory';
+  ov.innerHTML=`
+    <div class="dg-ov-icon">${win?'🏆':'💀'}</div>
+    <div class="dg-ov-title" style="color:${win?'var(--dg-rust)':'#c5482f'};">${win?'BOSS DEFEATED':'YOU FELL'}</div>
+    <div class="dg-ov-taunt">“${ev.taunt}”</div>
+    <button class="dg-btn" onclick="dgDismissEvent()">${win?'Claim the spoils':'Rise and try again'}</button>`;
+  ov.classList.add('show');
+}
+function dgDismissEvent(){
+  consumeDungeonEvent(); // clears lastEvent
+  save();
+  hideDungeonOverlay();
+  rDungeon();
 }
 
 /* ════════════════════════════════════════════════
