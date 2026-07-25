@@ -2271,7 +2271,7 @@ async function gymCheckIn() {
     const radius = S.gym.radius || 120;
     if (dist <= radius) {
       bumpStreak();
-      logDungeonSession(); // one check-in feeds both the streak and any active boss (no-op if none)
+      bossFlushPending(); // check-in verifies today → credit any volume trained earlier today (no-op if no boss)
       await save();
       toast(`✅ Checked in ${Math.round(dist)}m from your gym — streak day credited!`, 't-green');
     } else {
@@ -2366,10 +2366,16 @@ function rGymCheckin(sc) {
    the boss WINS, its grudge rises, it comes back harder and taunts you by
    name using your real shortfall. Losing is the point.
 
-   A "session" = one location-verified gym check-in (the same one that feeds
-   the streak). You must land `requiredSessions` of them before the deadline
-   (startedAt + windowDays). Deadline is real wall-clock: the boss can win
+   Defeat condition = deal `volumeTarget` kg of DAMAGE (training volume =
+   kg × reps of your completed sets) before the deadline (startedAt +
+   windowDays). Volume only counts on days you gym-check-in, so it can't be
+   farmed from the couch. Tougher bosses also carry a `calorieTarget` — a
+   SECONDARY objective you must also hit, logged manually end-of-day from
+   your watch/health app. Deadline is real wall-clock: the boss can win
    while the app is closed, settled by evalDungeon() on next boot.
+
+   volumeTarget/calorieTarget numbers are first-pass and meant to be tuned
+   against real data.
 
    This file is the ENGINE ONLY — no select-boss UI (that's coming from the
    frontend design). Every function here is safe to call with no active boss
@@ -2380,67 +2386,67 @@ function rGymCheckin(sc) {
 ════════════════════════════════════════════════ */
 const BOSSES = [
   { id:'grendel',  name:'Grendel, the Fen-Stalker', emoji:'🪓', level:10, creature:'Brute of the Marsh',
-    requiredSessions:8,  windowDays:12, intensity:{ setsBonus:1, repShift:0 },
+    volumeTarget:40000, calorieTarget:0,    windowDays:12, intensity:{ setsBonus:1, repShift:0 },
     taunts:{
       greet:"You reek of ambition, mortal. The fen swallows the ambitious whole.",
       defeat:[
-        "You fell {shortfall} short. Grendel feeds — and remembers your scent.",
-        "Twice you've fled the marsh. Grendel grows fat on your excuses.",
+        "You dealt only {pct}% of the damage. Grendel feeds — and remembers your scent.",
+        "Twice you've fled the marsh at {pct}%. Grendel grows fat on your excuses.",
         "{grudge} times beaten. You are not prey anymore. You are a habit.",
       ],
       victory:"The marsh... goes quiet. You've earned the deeper dark, warrior." } },
 
   { id:'ssythar',  name:'Ssythar, the Sable Basilisk', emoji:'🐍', level:20, creature:'Serpent of Stone',
-    requiredSessions:8,  windowDays:11, intensity:{ setsBonus:1, repShift:1 },
+    volumeTarget:50000, calorieTarget:0,    windowDays:11, intensity:{ setsBonus:1, repShift:1 },
     taunts:{
       greet:"Meet my gaze if you dare. Most turn to stone long before the tenth dawn.",
       defeat:[
-        "{shortfall} sessions unfinished. Ssythar's venom is patience — it always wins.",
-        "Frozen mid-stride again. Look away long enough and you become the statue.",
+        "Only {pct}%. Ssythar's venom is patience — it always wins.",
+        "Frozen mid-stride at {pct}%. Look away long enough and you become the statue.",
         "{grudge} defeats. My garden of the weak has a plinth with your name.",
       ],
       victory:"Impossible... my gaze... shattered. Slither onward, then." } },
 
   { id:'chimaros', name:'Chimaros, the Three-Headed', emoji:'🦁', level:30, creature:'Chimera of Three Hungers',
-    requiredSessions:9,  windowDays:12, intensity:{ setsBonus:1, repShift:2 },
+    volumeTarget:60000, calorieTarget:3500, windowDays:12, intensity:{ setsBonus:1, repShift:2 },
     taunts:{
       greet:"Three heads, three appetites. You cannot feed us all on half-effort.",
       defeat:[
-        "One head still hungers — you left {shortfall} undone. We hunt you next cycle.",
-        "Lion, goat, serpent — all three laughed as you faltered again.",
+        "One head still hungers — you dealt only {pct}%. We hunt you next cycle.",
+        "Lion, goat, serpent — all three laughed as you faltered at {pct}%.",
         "{grudge} feasts you've served us. Come, the middle head is still peckish.",
       ],
       victory:"All three heads bow at once. You are no longer on the menu." } },
 
   { id:'morrigan', name:'Morrígan, the Banshee', emoji:'👻', level:40, creature:'Wail of the Grave',
-    requiredSessions:9,  windowDays:11, intensity:{ setsBonus:2, repShift:2 },
+    volumeTarget:70000, calorieTarget:5000, windowDays:11, intensity:{ setsBonus:2, repShift:2 },
     taunts:{
       greet:"I have already sung your defeat. Prove the wail wrong.",
       defeat:[
-        "My wail was true. {shortfall} short — the grave-song fit you perfectly.",
+        "My wail was true. {pct}% — the grave-song fit you perfectly.",
         "Each time you fail, my scream finds a sharper note. Sing along?",
         "{grudge} funerals I've sung for you. You do so love an encore.",
       ],
       victory:"My scream... silenced. Go — before I find my voice again." } },
 
   { id:'vharokk',  name:'Vharokk, the Kraken', emoji:'🦑', level:50, creature:'Warden of the Abyss',
-    requiredSessions:10, windowDays:12, intensity:{ setsBonus:2, repShift:3 },
+    volumeTarget:82000, calorieTarget:7000, windowDays:12, intensity:{ setsBonus:2, repShift:3 },
     taunts:{
       greet:"The abyss counts your days. Surface too rarely and the depths keep you.",
       defeat:[
-        "The tide took {shortfall} of your days. Vharokk drags you deeper each drowning.",
-        "You thrash, you sink. The deep does not applaud effort — only arrival.",
+        "The tide took you at {pct}%. Vharokk drags you deeper each drowning.",
+        "You thrash, you sink. The deep does not applaud {pct}% — only arrival.",
         "{grudge} times the abyss has closed over you. It fits you like a grave.",
       ],
       victory:"The depths release their grip. Few ever surface, champion." } },
 
   { id:'ignarok',  name:'Ignarok, the Elder Wyrm', emoji:'🐉', level:60, creature:'The Last Flame',
-    requiredSessions:10, windowDays:12, intensity:{ setsBonus:3, repShift:3 },
+    volumeTarget:95000, calorieTarget:9000, windowDays:12, intensity:{ setsBonus:3, repShift:3 },
     taunts:{
       greet:"Elder flame has outlasted a thousand challengers. Burn brighter — or burn out.",
       defeat:[
-        "Ash. {shortfall} short and you are ash. The Wyrm has eternity; you have excuses.",
-        "You bring kindling to a firestorm and wonder why you smoulder.",
+        "Ash. {pct}% and you are ash. The Wyrm has eternity; you have excuses.",
+        "You bring {pct}% of a firestorm and wonder why you only smoulder.",
         "{grudge} times reduced to cinders. Even ash grows tired of you.",
       ],
       victory:"Ancient fire... yields. The bestiary is empty. There are no monsters left but you." } },
@@ -2468,14 +2474,16 @@ function nextBossId() {
 }
 
 // A boss's difficulty scaled by its grudge (how many times it has beaten you):
-// +1 required session per grudge, window tightened per grudge (floored so it stays
-// beatable), and extra sets every second grudge. This is the nemesis "levelling up".
+// +20% volume & calorie targets per grudge, window tightened per grudge (floored
+// so it stays beatable), extra sets every second grudge. The nemesis "levelling up".
 function bossEffective(id) {
   const b = bossById(id), g = bossRecord(id).grudge || 0;
-  const requiredSessions = b.requiredSessions + g;
-  const windowDays = Math.max(requiredSessions + 2, b.windowDays - g);
+  const mult = 1 + 0.2 * g;
+  const volumeTarget  = Math.round(b.volumeTarget  * mult);
+  const calorieTarget = Math.round((b.calorieTarget||0) * mult);
+  const windowDays = Math.max(7, b.windowDays - g);
   const intensity = { setsBonus: b.intensity.setsBonus + Math.floor(g/2), repShift: b.intensity.repShift };
-  return { ...b, requiredSessions, windowDays, intensity, grudge:g };
+  return { ...b, volumeTarget, calorieTarget, windowDays, intensity, grudge:g };
 }
 
 function isBossSelectable(id) {
@@ -2485,7 +2493,7 @@ function isBossSelectable(id) {
 // Fill {shortfall}/{grudge}/{name} in a taunt; pick the defeat line by grudge level.
 function bossTaunt(id, ctx = {}) {
   const b = bossById(id); if (!b || !b.taunts) return '';
-  const fill = s => (s || '').replace(/{shortfall}/g, ctx.shortfall ?? '')
+  const fill = s => (s || '').replace(/{pct}/g, ctx.pct ?? '')
                              .replace(/{grudge}/g, ctx.grudge ?? '')
                              .replace(/{name}/g, b.name);
   if (ctx.event === 'greet')   return fill(b.taunts.greet);
@@ -2505,23 +2513,66 @@ function startBoss(id) {
   const now = Date.now();
   const d = _dungeon();
   d.activeBossId = id;
-  d.run = { startedAt: now, deadline: now + eff.windowDays * 86400000,
-            requiredSessions: eff.requiredSessions, windowDays: eff.windowDays,
-            sessionsLogged: 0, sessionDates: [] };
+  d.run = { startedAt: now, deadline: now + eff.windowDays * 86400000, windowDays: eff.windowDays,
+            volumeTarget: eff.volumeTarget, calorieTarget: eff.calorieTarget,
+            volumeDone: 0, caloriesDone: 0,
+            creditedByDay: {}, pendingByDay: {}, caloriesByDay: {} };
   bossRecord(id).attempts++;
   return { ok:true, boss: eff, taunt: bossTaunt(id, { event:'greet' }) };
 }
 
-// Called by the gym check-in. One check-in = at most one session per calendar day.
-function logDungeonSession() {
-  const d = _dungeon();
-  if (!d.run) return { counted:false, reason:'no-active-boss' };
-  const today = todayYMD();
-  if (d.run.sessionDates.includes(today)) return { counted:false, reason:'already-today' };
-  if (Date.now() > d.run.deadline)        return { counted:false, reason:'expired' };
-  d.run.sessionsLogged++;
-  d.run.sessionDates.push(today);
-  return { counted:true, ...evalDungeon() };
+// Total training volume (kg × reps) of the completed sets on a program day.
+// Bodyweight sets count the lifter's own weight (latest logged, else 70kg).
+function dayVolume(dn) {
+  const sc = SCH[dn-1]; if (!sc || sc.isRest) return 0;
+  const bw = (S.wlog && S.wlog.length) ? S.wlog[S.wlog.length-1].kg : 70;
+  let v = 0;
+  exsForDay(dn).forEach((ex,ei)=>{
+    const db = EDB[ex.name] || {};
+    for (let s=0; s<ex.sets; s++){
+      const sd = S.sets[`${dn}_${ei}_${s}`];
+      if (sd?.done){ const wt = db.bw ? bw : (sd.wt||0); v += wt * (sd.reps||0); }
+    }
+  });
+  return Math.round(v);
+}
+function recomputeBossVolume(){
+  const d=_dungeon(); if(!d.run) return;
+  d.run.volumeDone = Object.values(d.run.creditedByDay).reduce((a,b)=>a+b,0);
+}
+
+// Credit a finished workout's volume to the active boss. Only counts if the user
+// has gym-checked-in TODAY (anti-couch); otherwise it's held pending and flushed
+// by the next same-day check-in (handles "trained then checked in" order).
+function bossCreditVolume(dn){
+  const d=_dungeon(); if(!d.run) return { credited:false, reason:'no-active-boss' };
+  if(Date.now() > d.run.deadline) return { credited:false, reason:'expired' };
+  const vol = dayVolume(dn);
+  if(S.lastStreakDate === todayYMD()){ d.run.creditedByDay[dn]=vol; delete d.run.pendingByDay[dn]; }
+  else { d.run.pendingByDay[dn]={ volume:vol, date:todayYMD() }; }
+  recomputeBossVolume();
+  return { credited: S.lastStreakDate===todayYMD(), volume:vol, ...evalDungeon() };
+}
+// Called by the gym check-in: verify today, flush any volume trained earlier today.
+function bossFlushPending(){
+  const d=_dungeon(); if(!d.run) return { event:'none' };
+  const today=todayYMD();
+  Object.entries(d.run.pendingByDay||{}).forEach(([dn,p])=>{
+    if(p.date===today){ d.run.creditedByDay[dn]=p.volume; delete d.run.pendingByDay[dn]; }
+  });
+  recomputeBossVolume();
+  return evalDungeon();
+}
+
+// Manual end-of-day calorie entry (from a watch/health app). One value per calendar
+// day (re-entering corrects it); summed into caloriesDone. No gym gate — self-reported.
+function bossLogCalories(kcal){
+  const d=_dungeon(); if(!d.run) return { ok:false, reason:'no-active-boss' };
+  if(!d.run.calorieTarget) return { ok:false, reason:'no-calorie-objective' };
+  if(Date.now() > d.run.deadline) return { ok:false, reason:'expired' };
+  d.run.caloriesByDay[todayYMD()] = Math.max(0, Math.round(kcal||0));
+  d.run.caloriesDone = Object.values(d.run.caloriesByDay).reduce((a,b)=>a+b,0);
+  return { ok:true, caloriesDone:d.run.caloriesDone, ...evalDungeon() };
 }
 
 // Settle the active boss against the clock. Returns an event; also stores it on
@@ -2533,7 +2584,10 @@ function evalDungeon(nowMs) {
   const now = nowMs || Date.now();
   const id = d.activeBossId, run = d.run;
 
-  if (run.sessionsLogged >= run.requiredSessions) {
+  const volMet = run.volumeDone >= run.volumeTarget;
+  const calMet = !run.calorieTarget || run.caloriesDone >= run.calorieTarget;
+
+  if (volMet && calMet) {
     const rec = bossRecord(id);
     rec.defeated = true; rec.defeatedAt = new Date().toISOString();
     const ev = { event:'victory', bossId:id, hadGrudge:rec.grudge, name:bossById(id).name,
@@ -2544,24 +2598,33 @@ function evalDungeon(nowMs) {
   if (now > run.deadline) {
     const rec = bossRecord(id);
     rec.grudge = (rec.grudge || 0) + 1;
-    const shortfall = run.requiredSessions - run.sessionsLogged;
-    const ev = { event:'defeat', bossId:id, shortfall, grudge:rec.grudge, name:bossById(id).name,
-                 taunt: bossTaunt(id, { event:'defeat', shortfall, grudge:rec.grudge }) };
+    const pct = Math.min(100, Math.round(run.volumeDone / run.volumeTarget * 100));
+    const ev = { event:'defeat', bossId:id, pct, grudge:rec.grudge, name:bossById(id).name,
+                 taunt: bossTaunt(id, { event:'defeat', pct, grudge:rec.grudge }) };
     d.run = null; d.activeBossId = null; d.lastEvent = ev;
     return ev;
   }
   return { event:'none' };
 }
 
-// Pace snapshot for the pressure UI: red flag when sessions left outpace days left.
+// Pace snapshot for the pressure UI. `behind` = you're below the linear pace the
+// window demands (volume you should have dealt by now to finish on time).
 function dungeonPace() {
   const d = _dungeon();
   if (!d.run) return null;
   const run = d.run;
-  const daysLeft = Math.max(0, Math.ceil((run.deadline - Date.now()) / 86400000));
-  const sessionsLeft = Math.max(0, run.requiredSessions - run.sessionsLogged);
-  return { sessionsLogged: run.sessionsLogged, requiredSessions: run.requiredSessions,
-           sessionsLeft, daysLeft, behind: sessionsLeft > daysLeft, deadline: run.deadline };
+  const now = Date.now();
+  const daysLeft = Math.max(0, Math.ceil((run.deadline - now) / 86400000));
+  const elapsed = Math.min(1, (now - run.startedAt) / (run.deadline - run.startedAt));
+  const expected = run.volumeTarget * elapsed;
+  return {
+    volumeDone: run.volumeDone, volumeTarget: run.volumeTarget,
+    volumePct: Math.min(100, Math.round(run.volumeDone / run.volumeTarget * 100)),
+    hasCalories: !!run.calorieTarget,
+    caloriesDone: run.caloriesDone, calorieTarget: run.calorieTarget,
+    caloriePct: run.calorieTarget ? Math.min(100, Math.round(run.caloriesDone / run.calorieTarget * 100)) : null,
+    daysLeft, behind: run.volumeDone < expected, deadline: run.deadline
+  };
 }
 
 // Frontend calls this after showing a victory/defeat popup.
@@ -3072,6 +3135,7 @@ async function finishWorkout(dn){
   if(dn>=S.today) S.today=Math.min(dn+1,30);
   const nd=Object.keys(S.sets).filter(k=>k.startsWith(dn+'_')&&S.sets[k].done).length;
   if(nd>=ts) maybeUnlockDungeon(dn);
+  bossCreditVolume(dn); // deal this session's volume as boss damage (gym-gated; no-op if no boss)
   // Streak credit comes only from a location-verified gym check-in, not here.
   await save();
   if (nd >= ts) toast(`🔥 Day crushed! +${sessXP.toLocaleString()} XP this session!`, 't-green');
