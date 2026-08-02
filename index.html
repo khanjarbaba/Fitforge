@@ -1433,40 +1433,54 @@ loadDisplaySettings();
    individually-verified link, never a guess.
 ════════════════════════════════════════════════ */
 const WU = {
+  // Rotator-cuff/overhead prep swapped in ahead of heavy pressing (Bench,
+  // Incline, Arnold Press) — more targeted than generic arm circles/swings.
   push: { label:"Upper Body Warm-Up", duration:"8 min", moves:[
-    { name:"Arm Circles",             detail:"20 sec fwd + 20 sec back" },
-    { name:"Push-Up to Downward Dog", detail:"8 reps, slow & controlled" },
-    { name:"Band Pull-Aparts",        detail:"2 × 15 (or wall slides, no band)" },
-    { name:"Arm Swings Across Chest", detail:"2 × 10" },
-    { name:"Incline Push-Ups",        detail:"1 × 15, easy pace" },
+    { name:"External Rotation W",              detail:"10–15 reps, 5–10 sec hold" },
+    { name:"Push-Up to Downward Dog",          detail:"8 reps, slow & controlled" },
+    { name:"External Rotation Press (Elevated)",detail:"8–10 reps per side" },
+    { name:"Shoulder Tap",                     detail:"8–10 reps per side" },
+    { name:"Band Pull-Aparts",                 detail:"2 × 15 (or wall slides, no band)" },
   ]},
-  pull: { label:"Back & Pull Warm-Up", duration:"8 min", moves:[
+  // Rear-delt/rotator prep (pairs with Face Pulls) plus spine stability for
+  // the row-heavy pull day.
+  pull: { label:"Back & Pull Warm-Up", duration:"9 min", moves:[
     { name:"Cat-Cow Stretch",         detail:"10 reps, slow" },
+    { name:"External Rotation W",     detail:"10–15 reps, 5–10 sec hold" },
     { name:"Band Pull-Aparts",        detail:"2 × 15" },
+    { name:"Bird Dog",                detail:"6 reps per side, 10 sec hold" },
+    { name:"Curl-Up",                 detail:"6 reps, 10 sec hold" },
     { name:"Scapular Shrugs",         detail:"2 × 10 (dead hang or bar)" },
-    { name:"Arm Swings Across Chest", detail:"20 reps" },
-    { name:"Light Face Pulls/Rows",   detail:"1 × 15, easy weight" },
   ]},
-  legs: { label:"Lower Body Warm-Up", duration:"8 min", moves:[
-    { name:"Bodyweight Squats",       detail:"15 reps" },
-    { name:"Leg Swings (fwd/back)",   detail:"10 per leg" },
-    { name:"Leg Swings (side/side)",  detail:"10 per leg" },
-    { name:"Walking Lunges",          detail:"10 per leg" },
-    { name:"Glute Bridges",           detail:"15 reps" },
+  // Goblet Squat + Hip Airplane are direct squat/hinge-pattern prep for Back
+  // Squats and Romanian Deadlifts; glute activation before both.
+  legs: { label:"Lower Body Warm-Up", duration:"9 min", moves:[
+    { name:"Goblet Squat",                     detail:"8–10 reps, pause at bottom" },
+    { name:"Hip Airplane (assisted)",          detail:"5–10 reps per side, 5–10 sec hold" },
+    { name:"Leg Swings (fwd/back)",            detail:"10 per leg" },
+    { name:"Lock Clam",                        detail:"10–15 reps per side" },
+    { name:"Banded/Bodyweight Glute Bridge",   detail:"10–15 reps (or 10-sec holds if banded)" },
+    { name:"Walking Lunges",                   detail:"10 per leg" },
   ]},
+  // Hip Airplane + Bird Dog prep the Deadlift hinge; Front Plank braces the
+  // core for this day's heaviest pull.
   upper: { label:"Full Body Warm-Up", duration:"8 min", moves:[
     { name:"Jumping Jacks",           detail:"30 sec" },
-    { name:"Arm Circles",             detail:"20 sec each direction" },
     { name:"Push-Up to Downward Dog", detail:"8 reps" },
-    { name:"Torso Twists",            detail:"20 reps" },
-    { name:"Bodyweight Squats",       detail:"10 reps" },
+    { name:"Hip Airplane (assisted)", detail:"5–10 reps per side, 5–10 sec hold" },
+    { name:"Bird Dog",                detail:"6 reps per side, 10 sec hold" },
+    { name:"Front Plank",             detail:"1 × 30 sec (widen feet if too hard)" },
   ]},
-  lower: { label:"Mobility Warm-Up", duration:"8 min", moves:[
-    { name:"Hip Circles",             detail:"10 each direction, each side" },
-    { name:"Ankle Circles",           detail:"10 each direction, each foot" },
-    { name:"Walking Knee Hugs",       detail:"10 per leg" },
-    { name:"World's Greatest Stretch",detail:"5 per side (lunge + reach + rotate)" },
-    { name:"Slow Deep Squats",        detail:"10 reps, pause at bottom" },
+  // Already the most mobility-focused day — Goblet Squat/Hip Airplane prep
+  // Front Squats and Stiff Leg Deadlifts specifically; Side Plank adds the
+  // lateral stability the other days don't need as much.
+  lower: { label:"Mobility Warm-Up", duration:"9 min", moves:[
+    { name:"Goblet Squat",             detail:"8–10 reps, pause at bottom" },
+    { name:"Hip Airplane (assisted)",  detail:"5–10 reps per side, 5–10 sec hold" },
+    { name:"Ankle Circles",            detail:"10 each direction, each foot" },
+    { name:"Lock Clam",                detail:"10–15 reps per side" },
+    { name:"World's Greatest Stretch", detail:"5 per side (lunge + reach + rotate)" },
+    { name:"Side Plank",               detail:"6 reps per side, 10 sec hold (or 15–30 sec hold)" },
   ]},
 };
 
